@@ -107,9 +107,11 @@ Visit `http://127.0.0.1:8000` to access the application.
 
 ### Demo Users
 The system includes demo users for testing:
-- **Student**: `student@library.edu` / `demo123`
-- **Librarian**: `librarian@library.edu` / `demo123`
-- **Admin**: `admin@library.edu` / `demo123`
+- **Basic Member**: `john_member` / `test123`
+- **Premium Member**: `sara_premium` / `test123`  
+- **Student Member**: `alex_student` / `test123`
+- **Librarian**: `mike_librarian` / `test123`
+- **Admin**: `admin` / `admin123`
 
 ## 📱 Usage
 

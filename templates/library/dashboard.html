@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Library Management System{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="text-white mb-1">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+        <p class="text-white-50 mb-0">Welcome back, {{ user.get_full_name|default:user.username }}!</p>
+    </div>
+    <div>
+        <span class="badge badge-glass fs-6">
+            <i class="fas fa-calendar me-1"></i>{{ today|date:"F j, Y" }}
+        </span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card glass-card h-100 text-white">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-book" style="background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                </div>
+                <h3 class="mb-2">{{ stats.total_books|default:0 }}</h3>
+                <p class="text-white-50 mb-0">Total Books</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card glass-card h-100 text-white">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-book-open" style="background: linear-gradient(45deg, #f093fb, #f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                </div>
+                <h3 class="mb-2">{{ stats.borrowed_books|default:0 }}</h3>
+                <p class="text-white-50 mb-0">Borrowed Books</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card glass-card h-100 text-white">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-bookmark" style="background: linear-gradient(45deg, #4facfe, #00f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                </div>
+                <h3 class="mb-2">{{ stats.reservations|default:0 }}</h3>
+                <p class="text-white-50 mb-0">Active Reservations</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card glass-card h-100 text-white">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-money-bill-wave" style="background: linear-gradient(45deg, #43e97b, #38f9d7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                </div>
+                <h3 class="mb-2">{{ stats.pending_fines|default:0 }}</h3>
+                <p class="text-white-50 mb-0">Pending Fines (MVR)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mb-5">
+    <div class="col-md-8">
+        <div class="glass-card p-4">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-rocket me-2"></i>Quick Actions
+            </h4>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a href="{% url 'library:book_search' %}" class="btn btn-glass w-100 py-3">
+                        <i class="fas fa-search d-block mb-2"></i>
+                        Search Books
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'circulation:my_loans' %}" class="btn btn-glass w-100 py-3">
+                        <i class="fas fa-book-reader d-block mb-2"></i>
+                        My Books
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'authentication:profile' %}" class="btn btn-glass w-100 py-3">
+                        <i class="fas fa-user-cog d-block mb-2"></i>
+                        Profile Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="glass-card p-4">
+            <h5 class="text-white mb-3">
+                <i class="fas fa-user-circle me-2"></i>Your Membership
+            </h5>
+            <div class="mb-3">
+                <strong class="text-white">Type:</strong>
+                <span class="badge badge-glass ms-2">{{ user.membership_fee.get_membership_type_display|default:"Basic" }}</span>
+            </div>
+            <div class="mb-3">
+                <strong class="text-white">Status:</strong>
+                <span class="badge {% if user.membership_status == 'active' %}bg-success{% else %}bg-warning{% endif %} ms-2">
+                    {{ user.get_membership_status_display|default:"Active" }}
+                </span>
+            </div>
+            <div class="mb-3">
+                <strong class="text-white">Expires:</strong>
+                <span class="text-white-50 ms-2">{{ user.membership_expiry|date:"M j, Y"|default:"N/A" }}</span>
+            </div>
+            <a href="{% url 'authentication:profile' %}" class="btn btn-glass btn-sm">
+                <i class="fas fa-edit me-1"></i>Update Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h5 class="text-white mb-4">
+                <i class="fas fa-clock me-2"></i>Recent Loans
+            </h5>
+            {% if recent_loans %}
+                <div class="list-group list-group-flush">
+                    {% for loan in recent_loans %}
+                        <div class="list-group-item" style="background: transparent; border-color: rgba(255,255,255,0.1); color: white;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ loan.book_copy.book.title }}</h6>
+                                    <p class="mb-1 text-white-50">{{ loan.book_copy.book.authors.all.0.name|default:"Unknown Author" }}</p>
+                                    <small class="text-white-50">Borrowed: {{ loan.borrowed_date|date:"M j, Y" }}</small>
+                                </div>
+                                <span class="badge {% if loan.status == 'borrowed' %}bg-warning{% elif loan.status == 'returned' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'circulation:my_loans' %}" class="btn btn-glass btn-sm">
+                        <i class="fas fa-eye me-1"></i>View All Loans
+                    </a>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-book-open display-6 text-white-50 mb-3"></i>
+                    <p class="text-white-50 mb-0">No recent loans</p>
+                    <a href="{% url 'library:book_search' %}" class="btn btn-glass btn-sm mt-2">
+                        <i class="fas fa-search me-1"></i>Find Books
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h5 class="text-white mb-4">
+                <i class="fas fa-bookmark me-2"></i>Active Reservations
+            </h5>
+            {% if reservations %}
+                <div class="list-group list-group-flush">
+                    {% for reservation in reservations %}
+                        <div class="list-group-item" style="background: transparent; border-color: rgba(255,255,255,0.1); color: white;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ reservation.book.title }}</h6>
+                                    <p class="mb-1 text-white-50">{{ reservation.book.authors.all.0.name|default:"Unknown Author" }}</p>
+                                    <small class="text-white-50">Reserved: {{ reservation.reserved_date|date:"M j, Y" }}</small>
+                                </div>
+                                <span class="badge {% if reservation.status == 'active' %}bg-info{% elif reservation.status == 'ready' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'circulation:my_reservations' %}" class="btn btn-glass btn-sm">
+                        <i class="fas fa-eye me-1"></i>View All Reservations
+                    </a>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-bookmark display-6 text-white-50 mb-3"></i>
+                    <p class="text-white-50 mb-0">No active reservations</p>
+                    <a href="{% url 'library:book_search' %}" class="btn btn-glass btn-sm mt-2">
+                        <i class="fas fa-search me-1"></i>Reserve Books
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Overdue Notifications -->
+{% if overdue_books %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-glass border-warning" role="alert">
+            <h5 class="alert-heading text-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>Overdue Books
+            </h5>
+            <p class="mb-2">You have {{ overdue_books|length }} overdue book{{ overdue_books|length|pluralize }}. Please return them as soon as possible to avoid additional fines.</p>
+            <hr>
+            {% for book in overdue_books %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong>{{ book.book_copy.book.title }}</strong>
+                        <span class="text-white-50">- Due: {{ book.due_date|date:"M j, Y" }}</span>
+                    </div>
+                    <span class="badge bg-danger">{{ book.days_overdue }} day{{ book.days_overdue|pluralize }} overdue</span>
+                </div>
+            {% endfor %}
+            <a href="{% url 'circulation:my_loans' %}" class="btn btn-warning btn-sm mt-2">
+                <i class="fas fa-book me-1"></i>Manage Loans
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Popular Books Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-fire me-2"></i>Popular Books
+            </h4>
+            <div class="row g-3">
+                {% for book in popular_books %}
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card glass-card h-100">
+                            <div class="card-body text-white">
+                                <h6 class="card-title">{{ book.title|truncatechars:50 }}</h6>
+                                <p class="card-text text-white-50 mb-2">{{ book.authors.all.0.name|default:"Unknown Author" }}</p>
+                                <p class="card-text">
+                                    <small class="text-white-50">{{ book.category|title }}</small>
+                                    <br>
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        {{ book.get_available_copies_count }} available
+                                    </small>
+                                </p>
+                                <a href="{% url 'library:book_detail' book.id %}" class="btn btn-glass btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="text-center py-4">
+                            <i class="fas fa-book display-4 text-white-50 mb-3"></i>
+                            <p class="text-white-50">No popular books data available</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

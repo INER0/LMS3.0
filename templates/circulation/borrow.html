@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Borrow Book - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .borrow-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .borrow-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .book-cover {
+        width: 120px;
+        height: 160px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.9rem;
+        text-align: center;
+        line-height: 1.3;
+        margin-bottom: 1rem;
+    }
+    
+    .success-icon {
+        color: #28a745;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-glass {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+    }
+    
+    .btn-glass:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="borrow-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="borrow-card text-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="book-cover mx-auto">
+                                <span>{{ book.title|truncatechars:30 }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h2 class="mb-4">
+                                <i class="fas fa-book-open me-2"></i>
+                                Borrow This Book
+                            </h2>
+                            
+                            <div class="mb-4">
+                                <h4>{{ book.title }}</h4>
+                                <p class="mb-2">by {{ book.author }}</p>
+                                <p class="text-light opacity-75">{{ book.publisher.name }}</p>
+                            </div>
+                            
+                            {% if available_copy %}
+                                <div class="alert alert-success bg-success text-white border-0 mb-4">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Copy available: {{ available_copy.barcode }}
+                                </div>
+                                
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Due Date</label>
+                                            <input type="date" class="form-control" 
+                                                   value="{{ due_date|date:'Y-m-d' }}" readonly>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Loan Duration</label>
+                                            <input type="text" class="form-control" 
+                                                   value="14 days" readonly>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-3">
+                                        <button type="submit" class="btn btn-success btn-lg">
+                                            <i class="fas fa-check me-2"></i>
+                                            Confirm Borrowing
+                                        </button>
+                                        <a href="{% url 'library:book_detail' book.id %}" class="btn btn-glass">
+                                            <i class="fas fa-arrow-left me-2"></i>
+                                            Back to Book Details
+                                        </a>
+                                    </div>
+                                </form>
+                            {% else %}
+                                <div class="alert alert-warning bg-warning text-dark border-0 mb-4">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    No copies available for borrowing
+                                </div>
+                                
+                                <div class="d-grid gap-3">
+                                    <a href="{% url 'circulation:reserve' book.id %}" class="btn btn-warning btn-lg">
+                                        <i class="fas fa-bookmark me-2"></i>
+                                        Reserve This Book Instead
+                                    </a>
+                                    <a href="{% url 'library:book_detail' book.id %}" class="btn btn-glass">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Back to Book Details
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Borrowing Rules -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-8">
+                <div class="borrow-card">
+                    <h5 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Borrowing Rules
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-clock me-2 text-warning"></i>Standard loan period: 14 days</li>
+                                <li><i class="fas fa-redo me-2 text-info"></i>Renewals: Up to 2 times</li>
+                                <li><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Late return fine: MVR 5 per day</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-book me-2 text-success"></i>Maximum 5 books at once</li>
+                                <li><i class="fas fa-user-check me-2 text-primary"></i>Must have valid membership</li>
+                                <li><i class="fas fa-shield-alt me-2 text-secondary"></i>Books must be returned in good condition</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set minimum date to today for due date
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.querySelector('input[type="date"]');
+        if (dateInput) {
+            const today = new Date();
+            today.setDate(today.getDate() + 14); // 14 days from now
+            dateInput.value = today.toISOString().split('T')[0];
+        }
+    });
+</script>
+{% endblock %}

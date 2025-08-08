@@ -1,0 +1,192 @@
+{% extends 'ba                <a class="btn btn-outline-light btn-lg" href="{% url 'library:book_search' %}" role="button">
+                    <i class="fas fa-search me-2"></i>Browse Books
+                </a>base.html' %}
+
+{% block title %}Welcome to Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <!-- Hero Section -->
+        <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+            <div class="container-fluid py-5">
+                <h1 class="display-5 fw-bold">Welcome to Library Management System</h1>
+                <p class="col-md-8 fs-4">
+                    Discover, borrow, and manage your reading journey with our modern digital library platform.
+                </p>
+                <a class="btn btn-outline-light btn-lg" href="{% url 'library:book_list' %}" role="button">
+                    <i class="fas fa-search"></i> Browse Books
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Stats -->
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                <h4 class="card-title">Books</h4>
+                <p class="card-text">Extensive collection of books across various genres</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                <h4 class="card-title">Members</h4>
+                <p class="card-text">Join our growing community of book lovers</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-map-marker-alt fa-3x text-info mb-3"></i>
+                <h4 class="card-title">Branches</h4>
+                <p class="card-text">Multiple locations for your convenience</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-mobile-alt fa-3x text-warning mb-3"></i>
+                <h4 class="card-title">Digital</h4>
+                <p class="card-text">Access digital services and e-books</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Featured Services -->
+    <div class="col-lg-8">
+        <h2>Our Services</h2>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-book-open text-primary"></i> Book Borrowing
+                        </h5>
+                        <p class="card-text">
+                            Borrow books for up to 14 days with extension options for premium members.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-bookmark text-success"></i> Book Reservations
+                        </h5>
+                        <p class="card-text">
+                            Reserve books that are currently unavailable and get notified when ready.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-tablet-alt text-info"></i> Digital Services
+                        </h5>
+                        <p class="card-text">
+                            Access e-books, research databases, and online resources.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-credit-card text-warning"></i> Online Payments
+                        </h5>
+                        <p class="card-text">
+                            Pay membership fees, fines, and service charges online securely.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Membership Info -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-id-card"></i> Membership Plans</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-primary">Basic Member</h6>
+                    <small>MVR 50/month - 3 books - 14 days</small>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-success">Premium Member</h6>
+                    <small>MVR 75/month - 5 books - 14+7 days</small>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-info">Student Member</h6>
+                    <small>MVR 30/month - 4 books - 21 days</small>
+                </div>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'authentication:register' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-user-plus"></i> Join Now
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if user.is_authenticated %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-user"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'circulation:my_loans' %}" class="btn btn-outline-primary btn-sm d-block mb-2">
+                    <i class="fas fa-bookmark"></i> My Current Loans
+                </a>
+                <a href="{% url 'circulation:my_fines' %}" class="btn btn-outline-warning btn-sm d-block mb-2">
+                    <i class="fas fa-exclamation-circle"></i> Outstanding Fines
+                </a>
+                <a href="{% url 'library:book_search' %}" class="btn btn-outline-info btn-sm d-block">
+                    <i class="fas fa-search"></i> Advanced Search
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Updates -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h3>System Information</h3>
+        <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle"></i> Welcome to the Library Management System</h6>
+            <p>This system is designed for academic coursework (UFCF8S-30-2) and implements comprehensive library operations including:</p>
+            <ul class="mb-0">
+                <li>Multi-branch library management</li>
+                <li>Role-based access control with security features</li>
+                <li>Comprehensive book catalog and inventory tracking</li>
+                <li>Automated fine calculations and payment processing</li>
+                <li>Digital services and e-book access</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

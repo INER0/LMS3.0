@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}My Loans{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    My Loans
+                </h2>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'library:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    <a href="{% url 'library:book_search' %}" class="btn btn-gradient">
+                        <i class="fas fa-plus me-1"></i>Borrow More Books
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon text-primary">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ stats.current_loans }}</div>
+                    <div class="stats-label">Current Loans</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ stats.overdue_loans }}</div>
+                    <div class="stats-label">Overdue</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon text-success">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ stats.total_loans }}</div>
+                    <div class="stats-label">Total Borrowed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon text-warning">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div>
+                    <div class="stats-number">MVR {{ stats.pending_fines|floatformat:2 }}</div>
+                    <div class="stats-label">Pending Fines</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills nav-fill" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#current-loans" type="button">
+                        <i class="fas fa-book-open me-1"></i>Current Loans ({{ current_loans_count }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#overdue-loans" type="button">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Overdue ({{ overdue_loans.count }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#history-loans" type="button">
+                        <i class="fas fa-check-circle me-1"></i>History
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tab-content">
+        <!-- Current Loans Tab -->
+        <div class="tab-pane fade show active" id="current-loans">
+            {% if current_loans %}
+            <div class="row">
+                {% for loan in current_loans %}
+                <div class="col-md-6 mb-4">
+                    <div class="card loan-card h-100">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-auto">
+                                    <div class="book-cover-mini">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h5 class="card-title mb-2">{{ loan.book_copy.book.title }}</h5>
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-user me-1"></i>{{ loan.book_copy.book.author.name }}<br>
+                                        <i class="fas fa-barcode me-1"></i>{{ loan.book_copy.book.isbn }}
+                                    </p>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <small class="text-muted">Borrowed</small>
+                                            <div class="fw-bold">{{ loan.borrowed_date|date:"M d, Y" }}</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Due Date</small>
+                                            <div class="fw-bold {% if loan.is_overdue %}text-danger{% elif loan.due_soon %}text-warning{% endif %}">
+                                                {{ loan.due_date|date:"M d, Y" }}
+                                                {% if loan.due_soon and not loan.is_overdue %}
+                                                    <small class="text-warning">({{ loan.days_until_due }} days)</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if loan.is_overdue %}
+                                    <div class="alert alert-danger py-2 mb-2">
+                                        <small>
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Overdue by {{ loan.days_overdue }} day{{ loan.days_overdue|pluralize }}
+                                        </small>
+                                    </div>
+                                    {% elif loan.due_soon %}
+                                    <div class="alert alert-warning py-2 mb-2">
+                                        <small>
+                                            <i class="fas fa-clock me-1"></i>
+                                            Due in {{ loan.days_until_due }} day{{ loan.days_until_due|pluralize }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex gap-2">
+                                        {% if loan.can_extend %}
+                                        <form method="post" action="{% url 'circulation:extend' loan.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-clock me-1"></i>Extend
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <form method="post" action="{% url 'circulation:return' loan.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success" 
+                                                    onclick="return confirm('Are you sure you want to return this book?')">
+                                                <i class="fas fa-check me-1"></i>Return
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'library:book_detail' loan.book_copy.book.id %}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-info-circle me-1"></i>Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-book-open fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">No Current Loans</h4>
+                <p class="text-muted">You don't have any books checked out right now.</p>
+                <a href="{% url 'library:book_search' %}" class="btn btn-gradient btn-lg">
+                    <i class="fas fa-search me-2"></i>Browse Books
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Overdue Loans Tab -->
+        <div class="tab-pane fade" id="overdue-loans">
+            {% if overdue_loans %}
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Attention!</strong> You have {{ overdue_loans.count }} overdue book(s). 
+                Please return them as soon as possible to avoid additional fines.
+            </div>
+            
+            <div class="row">
+                {% for loan in overdue_loans %}
+                <div class="col-md-6 mb-4">
+                    <div class="card loan-card border-danger h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title text-danger mb-0">{{ loan.book_copy.book.title }}</h5>
+                                <span class="badge bg-danger">{{ loan.days_overdue }} days overdue</span>
+                            </div>
+                            <p class="text-muted mb-2">{{ loan.book_copy.book.author.name }}</p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted">Due Date</small>
+                                    <div class="fw-bold text-danger">{{ loan.due_date|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Days Overdue</small>
+                                    <div class="fw-bold text-danger">{{ loan.days_overdue }}</div>
+                                </div>
+                            </div>
+                            
+                            <form method="post" action="{% url 'circulation:return' loan.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success btn-sm me-2" 
+                                        onclick="return confirm('Return this overdue book? A fine may be applied.')">
+                                    <i class="fas fa-check me-1"></i>Return Now
+                                </button>
+                            </form>
+                            <a href="{% url 'library:book_detail' loan.book_copy.book.id %}" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-info-circle me-1"></i>Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-4"></i>
+                <h4 class="text-success">No Overdue Books</h4>
+                <p class="text-muted">Great job! All your books are returned on time.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- History Tab -->
+        <div class="tab-pane fade" id="history-loans">
+            {% if loan_history %}
+            <div class="row">
+                {% for loan in loan_history %}
+                <div class="col-md-6 mb-3">
+                    <div class="card loan-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">{{ loan.book_copy.book.title }}</h6>
+                                <span class="badge bg-success">
+                                    Returned
+                                </span>
+                            </div>
+                            <p class="text-muted small mb-2">{{ loan.book_copy.book.author.name }}</p>
+                            
+                            <div class="row small">
+                                <div class="col-4">
+                                    <div class="text-muted">Borrowed</div>
+                                    <div>{{ loan.borrowed_date|date:"M d" }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-muted">Due</div>
+                                    <div>{{ loan.due_date|date:"M d" }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-muted">Returned</div>
+                                    <div>{{ loan.returned_date|date:"M d" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if loan_history.has_other_pages %}
+            <nav aria-label="Loan history pagination">
+                <ul class="pagination justify-content-center">
+                    {% if loan_history.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ loan_history.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ loan_history.number }} of {{ loan_history.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if loan_history.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ loan_history.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-history fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">No Loan History</h4>
+                <p class="text-muted">Your returned books will appear here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.loan-card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.loan-card:hover {
+    transform: translateY(-2px);
+}
+
+.book-cover-mini {
+    width: 50px;
+    height: 70px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stats-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 100%;
+}
+
+.stats-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.stats-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.stats-label {
+    color: #718096;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

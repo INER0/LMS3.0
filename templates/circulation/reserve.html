@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Reserve Book - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reserve-container {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .reserve-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .book-cover {
+        width: 120px;
+        height: 160px;
+        background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.9rem;
+        text-align: center;
+        line-height: 1.3;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-glass {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+    }
+    
+    .btn-glass:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .queue-position {
+        background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+        border-radius: 50px;
+        padding: 0.5rem 1rem;
+        display: inline-block;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reserve-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="reserve-card text-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="book-cover mx-auto">
+                                <span>{{ book.title|truncatechars:30 }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h2 class="mb-4">
+                                <i class="fas fa-bookmark me-2"></i>
+                                Reserve This Book
+                            </h2>
+                            
+                            <div class="mb-4">
+                                <h4>{{ book.title }}</h4>
+                                <p class="mb-2">by {{ book.author }}</p>
+                                <p class="text-light opacity-75">{{ book.publisher.name }}</p>
+                            </div>
+                            
+                            <div class="alert alert-info bg-info text-white border-0 mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                All copies are currently borrowed. You can reserve this book.
+                            </div>
+                            
+                            {% if existing_reservation %}
+                                <div class="alert alert-warning bg-warning text-dark border-0 mb-4">
+                                    <i class="fas fa-bookmark me-2"></i>
+                                    You already have a reservation for this book.
+                                </div>
+                                
+                                <div class="queue-position">
+                                    <i class="fas fa-users me-2"></i>
+                                    Position in queue: {{ existing_reservation.queue_position }}
+                                </div>
+                                
+                                <div class="d-grid gap-3 mt-4">
+                                    <a href="{% url 'circulation:my_reservations' %}" class="btn btn-info btn-lg">
+                                        <i class="fas fa-list me-2"></i>
+                                        View My Reservations
+                                    </a>
+                                    <a href="{% url 'library:book_detail' book.id %}" class="btn btn-glass">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Back to Book Details
+                                    </a>
+                                </div>
+                            {% else %}
+                                <form method="post">
+                                    {% csrf_token %}
+                                    
+                                    <div class="mb-4">
+                                        <h6>Estimated wait time</h6>
+                                        <p class="text-light opacity-75">
+                                            Based on current reservations: {{ estimated_wait_days }} days
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-3">
+                                        <button type="submit" class="btn btn-warning btn-lg">
+                                            <i class="fas fa-bookmark me-2"></i>
+                                            Confirm Reservation
+                                        </button>
+                                        <a href="{% url 'library:book_detail' book.id %}" class="btn btn-glass">
+                                            <i class="fas fa-arrow-left me-2"></i>
+                                            Back to Book Details
+                                        </a>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reservation Rules -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-8">
+                <div class="reserve-card">
+                    <h5 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Reservation Rules
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-clock me-2 text-warning"></i>Hold for 3 days when available</li>
+                                <li><i class="fas fa-bell me-2 text-info"></i>Email notification when ready</li>
+                                <li><i class="fas fa-users me-2 text-primary"></i>First-come, first-served basis</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-bookmark me-2 text-success"></i>Maximum 3 reservations at once</li>
+                                <li><i class="fas fa-times me-2 text-danger"></i>Can cancel anytime</li>
+                                <li><i class="fas fa-shield-alt me-2 text-secondary"></i>Valid membership required</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

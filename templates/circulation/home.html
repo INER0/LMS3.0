@@ -1,0 +1,312 @@
+{% extends 'circulation/base.html' %}
+
+{% block title %}Circula                <a href="{% url 'payments:fines' %}" class="btn btn-warning btn-sm ms-2">
+                    <i class="fas fa-credit-card me-1"></i>Pay Fines
+                </a>n Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="circulation-stats">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-book-reader me-3"></i>
+                    Welcome, {{ user.first_name|default:user.username }}!
+                </h1>
+                <p class="lead mb-0">
+                    Manage your library circulation activities
+                </p>
+                <small class="opacity-75">
+                    Member since {{ user.date_joined|date:"F Y" }} | 
+                    {{ user.membership_fee.get_membership_type_display }} Member
+                </small>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ current_loans_count }}</div>
+                            <div class="stat-label">Current Loans</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ reservations_count }}</div>
+                            <div class="stat-label">Active Reservations</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-number">MVR {{ unpaid_fines_total|floatformat:2 }}</div>
+                            <div class="stat-label">Unpaid Fines</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ user.membership_fee.max_books }}</div>
+                            <div class="stat-label">Book Limit</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if unpaid_fines_total > 0 %}
+    <div class="alert fine-alert" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-1">Outstanding Fines</h5>
+                <p class="mb-2">You have unpaid fines totaling MVR {{ unpaid_fines_total|floatformat:2 }}</p>
+                <a href="{% url 'circulation:my_fines' %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-eye me-1"></i>View Fines
+                </a>
+                <a href="{% url 'payments:pay_fines' %}" class="btn btn-warning btn-sm ms-2">
+                    <i class="fas fa-credit-card me-1"></i>Pay Now
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="h4 mb-3">
+                <i class="fas fa-bolt text-warning me-2"></i>
+                Quick Actions
+            </h3>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card loan-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                    <h5>Search Books</h5>
+                    <p class="text-muted small">Find and reserve books</p>
+                    <a href="{% url 'library:book_search' %}" class="btn btn-gradient">
+                        <i class="fas fa-arrow-right me-1"></i>Browse Catalog
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card loan-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-3x text-success mb-3"></i>
+                    <h5>My Loans</h5>
+                    <p class="text-muted small">View current loans</p>
+                    <a href="{% url 'circulation:my_loans' %}" class="btn btn-gradient">
+                        <i class="fas fa-arrow-right me-1"></i>View Loans
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card loan-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bookmark fa-3x text-info mb-3"></i>
+                    <h5>Reservations</h5>
+                    <p class="text-muted small">Manage reservations</p>
+                    <a href="{% url 'circulation:my_reservations' %}" class="btn btn-gradient">
+                        <i class="fas fa-arrow-right me-1"></i>View Queue
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card loan-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-history fa-3x text-secondary mb-3"></i>
+                    <h5>Loan History</h5>
+                    <p class="text-muted small">Past transactions</p>
+                    <a href="{% url 'circulation:my_loans' %}" class="btn btn-gradient">
+                        <i class="fas fa-arrow-right me-1"></i>View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Loans -->
+    {% if current_loans %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="h4 mb-3">
+                <i class="fas fa-book text-primary me-2"></i>
+                Current Loans
+            </h3>
+        </div>
+        
+        {% for loan in current_loans %}
+        <div class="col-md-6 mb-3">
+            <div class="card loan-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="book-cover">
+                                {{ loan.book_copy.book.title|truncatechars:10 }}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h6 class="card-title mb-1">{{ loan.book_copy.book.title }}</h6>
+                            <p class="text-muted small mb-2">
+                                by {{ loan.book_copy.book.author.name }}
+                            </p>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="status-badge status-{{ loan.status }}">
+                                    {{ loan.get_status_display }}
+                                </span>
+                                {% if loan.is_overdue %}
+                                <span class="text-danger small">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    {{ loan.days_overdue }} days overdue
+                                </span>
+                                {% else %}
+                                <span class="text-muted small">
+                                    Due: {{ loan.due_date|date:"M d, Y" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            {% if loan.can_extend %}
+                            <a href="{% url 'circulation:extend' loan.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-clock me-1"></i>Extend
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="col-12">
+            <div class="text-center">
+                <a href="{% url 'circulation:my_loans' %}" class="btn btn-outline-primary">
+                    View All Loans <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Ready Reservations -->
+    {% if ready_reservations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="reservation-queue">
+                <h4 class="mb-3">
+                    <i class="fas fa-bell me-2"></i>
+                    Books Ready for Pickup
+                </h4>
+                
+                {% for reservation in ready_reservations %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h6 class="mb-1">{{ reservation.book.title }}</h6>
+                                <p class="text-muted small mb-0">
+                                    Reserved on {{ reservation.reservation_date|date:"M d, Y" }}
+                                    {% if reservation.expires_at %}
+                                    • Expires {{ reservation.expires_at|date:"M d, Y" }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-success">Ready for Pickup</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center">
+                    <a href="{% url 'circulation:my_reservations' %}" class="btn btn-light">
+                        View All Reservations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="h4 mb-3">
+                <i class="fas fa-clock text-info me-2"></i>
+                Recent Activity
+            </h3>
+            
+            <div class="card">
+                <div class="card-body">
+                    {% if recent_loans %}
+                    <div class="timeline">
+                        {% for loan in recent_loans|slice:":5" %}
+                        <div class="timeline-item mb-3">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="timeline-icon bg-primary">
+                                        <i class="fas fa-book text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h6 class="mb-1">
+                                        {% if loan.status == 'returned' %}
+                                        Returned: {{ loan.book_copy.book.title }}
+                                        {% else %}
+                                        Borrowed: {{ loan.book_copy.book.title }}
+                                        {% endif %}
+                                    </h6>
+                                    <p class="text-muted small mb-0">
+                                        {% if loan.status == 'returned' and loan.return_date %}
+                                        {{ loan.return_date|date:"M d, Y" }}
+                                        {% else %}
+                                        {{ loan.borrow_date|date:"M d, Y" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="status-badge status-{{ loan.status }}">
+                                        {{ loan.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-book-open fa-3x mb-3 opacity-50"></i>
+                        <p>No recent activity</p>
+                        <a href="{% url 'library:book_search' %}" class="btn btn-gradient">
+                            Start Browsing Books
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+
+{% block title %}My Fines{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-money-bill-wave me-2 text-primary"></i>
+                    My Fines
+                </h2>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'library:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    {% if unpaid_fines %}
+                    <button class="btn btn-success" onclick="payAllFines()">
+                        <i class="fas fa-credit-card me-1"></i>Pay All Fines
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon text-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div>
+                    <div class="stats-number">MVR {{ unpaid_total|floatformat:2 }}</div>
+                    <div class="stats-label">Unpaid Fines</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon text-success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <div class="stats-number">MVR {{ paid_total|floatformat:2 }}</div>
+                    <div class="stats-label">Paid Fines</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon text-info">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div>
+                    <div class="stats-number">MVR {{ total_fines|floatformat:2 }}</div>
+                    <div class="stats-label">Total Fines</div>
+                </div>
+            </div>
+        </div>
+    </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h4>MVR {{ unpaid_total|floatformat:2 }}</h4>
+                    <p class="mb-0">Unpaid Fines</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4>MVR {{ paid_total|floatformat:2 }}</h4>
+                    <p class="mb-0">Paid Fines</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calculator fa-2x mb-2"></i>
+                    <h4>MVR {{ total_fines|floatformat:2 }}</h4>
+                    <p class="mb-0">Total Fines</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if unpaid_total > 0 %}
+    <div class="alert alert-warning" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-1">Outstanding Fines</h5>
+                <p class="mb-2">You have unpaid fines totaling MVR {{ unpaid_total|floatformat:2 }}. Please pay them to avoid restrictions on your account.</p>
+                <div>
+                                        <a href="{% url 'payments:fines' %}" class="btn btn-warning me-2">
+                        <i class="fas fa-credit-card me-2"></i>Pay All Outstanding Fines
+                                        <a href="{% url 'payments:history' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-history me-2"></i>Payment History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filter Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills nav-fill" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#unpaid-fines" type="button">
+                        <i class="fas fa-exclamation-circle me-1"></i>Unpaid ({{ unpaid_fines.count }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#paid-fines" type="button">
+                        <i class="fas fa-check-circle me-1"></i>Paid ({{ paid_fines.count }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#fine-rules" type="button">
+                        <i class="fas fa-info-circle me-1"></i>Fine Rules
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tab-content">
+        <!-- Unpaid Fines Tab -->
+        <div class="tab-pane fade show active" id="unpaid-fines">
+            {% if unpaid_fines %}
+            <div class="row">
+                {% for fine in unpaid_fines %}
+                <div class="col-md-6 mb-4">
+                    <div class="card loan-card border-danger">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title text-danger mb-1">
+                                        <i class="fas fa-money-bill-wave me-2"></i>
+                                        MVR {{ fine.amount|floatformat:2 }}
+                                    </h5>
+                                    <p class="text-muted mb-0">{{ fine.get_fine_type_display }} Fine</p>
+                                </div>
+                                <span class="badge bg-danger">Unpaid</span>
+                            </div>
+                            
+                            {% if fine.book_loan %}
+                            <div class="mb-3">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-book me-1"></i>
+                                    {{ fine.book_loan.book_copy.book.title }}
+                                </h6>
+                                <p class="text-muted small mb-2">
+                                    by {{ fine.book_loan.book_copy.book.author.name }}
+                                </p>
+                                
+                                <div class="row small">
+                                    <div class="col-6">
+                                        <div class="text-muted">Due Date</div>
+                                        <div>{{ fine.book_loan.due_date|date:"M d, Y" }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted">Days Overdue</div>
+                                        <div class="text-danger fw-bold">{{ fine.book_loan.days_overdue }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if fine.description %}
+                            <div class="mb-3">
+                                <small class="text-muted">Description:</small>
+                                <p class="small mb-0">{{ fine.description }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Fine issued: {{ fine.fine_date|date:"M d, Y" }}
+                                </small>
+                                <div class="btn-group">
+                                    {% if fine.book_loan %}
+                                    <a href="{% url 'library:book_detail' fine.book_loan.book_copy.book.id %}" 
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-book me-1"></i>Book Details
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'payments:pay_fine' fine.id %}" 
+                                       class="btn btn-sm btn-danger">
+                                        <i class="fas fa-credit-card me-1"></i>Pay Fine
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Payment Options -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-credit-card me-2"></i>
+                                Payment Options
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="d-grid">
+                                        <a href="{% url 'payments:fines' %}" class="btn btn-danger btn-lg">
+                                            <i class="fas fa-credit-card me-2"></i>
+                                            Pay All Fines (MVR {{ unpaid_total|floatformat:2 }})
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-grid">
+                                        <a href="{% url 'payments:history' %}" class="btn btn-outline-primary btn-lg">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Payment Methods
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-smile fa-4x text-success mb-4"></i>
+                <h4 class="text-success">No Unpaid Fines</h4>
+                <p class="text-muted">Great job! You don't have any outstanding fines.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Paid Fines Tab -->
+        <div class="tab-pane fade" id="paid-fines">
+            {% if paid_fines %}
+            <div class="row">
+                {% for fine in paid_fines %}
+                <div class="col-md-6 mb-3">
+                    <div class="card loan-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="card-title mb-1">
+                                        MVR {{ fine.amount|floatformat:2 }}
+                                    </h6>
+                                    <p class="text-muted small mb-0">{{ fine.get_fine_type_display }} Fine</p>
+                                </div>
+                                <span class="badge bg-success">Paid</span>
+                            </div>
+                            
+                            {% if fine.book_loan %}
+                            <p class="mb-2">
+                                <i class="fas fa-book me-1"></i>
+                                <strong>{{ fine.book_loan.book_copy.book.title }}</strong>
+                            </p>
+                            {% endif %}
+                            
+                            <div class="row small">
+                                <div class="col-6">
+                                    <div class="text-muted">Fine Date</div>
+                                    <div>{{ fine.fine_date|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted">Paid Date</div>
+                                    <div>{{ fine.paid_date|date:"M d, Y" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if paid_fines.has_other_pages %}
+            <nav aria-label="Paid fines pagination">
+                <ul class="pagination justify-content-center">
+                    {% if paid_fines.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ paid_fines.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ paid_fines.number }} of {{ paid_fines.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if paid_fines.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ paid_fines.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-receipt fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">No Payment History</h4>
+                <p class="text-muted">Your paid fines will appear here.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Fine Rules Tab -->
+        <div class="tab-pane fade" id="fine-rules">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-gavel me-2"></i>
+                        Fine Rules and Policies
+                    </h5>
+                    
+                    {% if fine_rules %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fine Type</th>
+                                    <th>Days Range</th>
+                                    <th>Rate per Day</th>
+                                    <th>Processing Fee</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rule in fine_rules %}
+                                <tr>
+                                    <td>
+                                        <span class="badge 
+                                            {% if rule.fine_type == 'overdue' %}bg-warning
+                                            {% elif rule.fine_type == 'lost' %}bg-danger
+                                            {% else %}bg-info{% endif %}">
+                                            {{ rule.get_fine_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ rule.delay_from }} - {{ rule.delay_to }} days</td>
+                                    <td>MVR {{ rule.rate_per_day|floatformat:2 }}</td>
+                                    <td>MVR {{ rule.processing_fee|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <!-- Default Fine Rules -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-warning bg-opacity-10 border-warning">
+                                <div class="card-body">
+                                    <h6 class="card-title text-warning">
+                                        <i class="fas fa-clock me-2"></i>Overdue Books
+                                    </h6>
+                                    <ul class="list-unstyled mb-0">
+                                        <li>Days 1-3: MVR 2.00 per day</li>
+                                        <li>Days 4-7: MVR 5.00 per day</li>
+                                        <li>Days 8+: MVR 10.00 per day</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-danger bg-opacity-10 border-danger">
+                                <div class="card-body">
+                                    <h6 class="card-title text-danger">
+                                        <i class="fas fa-times me-2"></i>Lost/Damaged Books
+                                    </h6>
+                                    <ul class="list-unstyled mb-0">
+                                        <li>Lost: Full replacement cost</li>
+                                        <li>Damaged: Repair/replacement cost</li>
+                                        <li>Processing fee: MVR 25.00</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Important Information
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Fines are calculated daily for overdue books</li>
+                                    <li>You cannot borrow new books if you have unpaid fines over MVR 50.00</li>
+                                    <li>Membership renewal may be blocked if fines remain unpaid</li>
+                                    <li>Payment receipts are available in your account after payment</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

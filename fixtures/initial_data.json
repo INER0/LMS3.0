@@ -1,0 +1,184 @@
+[
+  {
+    "model": "authentication.membershipfee",
+    "pk": 1,
+    "fields": {
+      "membership_type": "basic",
+      "monthly_fee": "50.00",
+      "annual_fee": "500.00",
+      "max_books": 3,
+      "loan_period": 14,
+      "extension_days": 0
+    }
+  },
+  {
+    "model": "authentication.membershipfee",
+    "pk": 2,
+    "fields": {
+      "membership_type": "premium",
+      "monthly_fee": "75.00",
+      "annual_fee": "750.00",
+      "max_books": 5,
+      "loan_period": 14,
+      "extension_days": 7
+    }
+  },
+  {
+    "model": "authentication.membershipfee",
+    "pk": 3,
+    "fields": {
+      "membership_type": "student",
+      "monthly_fee": "30.00",
+      "annual_fee": "300.00",
+      "max_books": 4,
+      "loan_period": 21,
+      "extension_days": 0
+    }
+  },
+  {
+    "model": "authentication.role",
+    "pk": 1,
+    "fields": {
+      "name": "Member",
+      "description": "Regular library member"
+    }
+  },
+  {
+    "model": "authentication.role",
+    "pk": 2,
+    "fields": {
+      "name": "Librarian",
+      "description": "Library staff member"
+    }
+  },
+  {
+    "model": "authentication.role",
+    "pk": 3,
+    "fields": {
+      "name": "Manager",
+      "description": "Library manager"
+    }
+  },
+  {
+    "model": "authentication.role",
+    "pk": 4,
+    "fields": {
+      "name": "Admin",
+      "description": "System administrator"
+    }
+  },
+  {
+    "model": "library.branch",
+    "pk": 1,
+    "fields": {
+      "name": "Main Library",
+      "location": "Male', Maldives",
+      "created_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "library.branch",
+    "pk": 2,
+    "fields": {
+      "name": "Kulhudhufushi Branch",
+      "location": "Kulhudhufushi, Haa Dhaalu Atoll",
+      "created_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "library.branch",
+    "pk": 3,
+    "fields": {
+      "name": "Addu City Branch",
+      "location": "Addu City, Seenu Atoll",
+      "created_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "library.section",
+    "pk": 1,
+    "fields": {
+      "name": "Fiction",
+      "branch": 1
+    }
+  },
+  {
+    "model": "library.section",
+    "pk": 2,
+    "fields": {
+      "name": "Non-Fiction",
+      "branch": 1
+    }
+  },
+  {
+    "model": "library.section",
+    "pk": 3,
+    "fields": {
+      "name": "Research",
+      "branch": 1
+    }
+  },
+  {
+    "model": "library.section",
+    "pk": 4,
+    "fields": {
+      "name": "Children's Books",
+      "branch": 1
+    }
+  },
+  {
+    "model": "circulation.finerule",
+    "pk": 1,
+    "fields": {
+      "fine_type": "overdue",
+      "delay_from": 1,
+      "delay_to": 3,
+      "rate_per_day": "2.00",
+      "processing_fee": "0.00"
+    }
+  },
+  {
+    "model": "circulation.finerule",
+    "pk": 2,
+    "fields": {
+      "fine_type": "overdue",
+      "delay_from": 4,
+      "delay_to": 7,
+      "rate_per_day": "5.00",
+      "processing_fee": "0.00"
+    }
+  },
+  {
+    "model": "circulation.finerule",
+    "pk": 3,
+    "fields": {
+      "fine_type": "overdue",
+      "delay_from": 8,
+      "delay_to": 365,
+      "rate_per_day": "10.00",
+      "processing_fee": "0.00"
+    }
+  },
+  {
+    "model": "circulation.finerule",
+    "pk": 4,
+    "fields": {
+      "fine_type": "lost",
+      "delay_from": 1,
+      "delay_to": 365,
+      "rate_per_day": "0.00",
+      "processing_fee": "50.00"
+    }
+  },
+  {
+    "model": "circulation.finerule",
+    "pk": 5,
+    "fields": {
+      "fine_type": "damaged",
+      "delay_from": 1,
+      "delay_to": 365,
+      "rate_per_day": "0.00",
+      "processing_fee": "25.00"
+    }
+  }
+]

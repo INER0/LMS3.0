@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .demo-user-btn {
+        text-align: center;
+        padding: 8px 4px;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    
+    .demo-user-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+    }
+    
+    .demo-user-btn .fw-bold {
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+    
+    .demo-user-btn small {
+        font-size: 0.65rem;
+        opacity: 0.8;
+    }
+    
+    .demo-user-btn i {
+        display: block;
+        margin-bottom: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="glass-card p-5">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-circle display-3 text-white mb-3"></i>
+                <h2 class="text-white mb-2">Welcome Back</h2>
+                <p class="text-white-50">Sign in to your account</p>
+            </div>
+
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="username" class="form-label text-white">
+                        <i class="fas fa-user me-2"></i>Username
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="username" 
+                           name="username" 
+                           placeholder="Enter your username"
+                           required
+                           autocomplete="username">
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label text-white">
+                        <i class="fas fa-lock me-2"></i>Password
+                    </label>
+                    <div class="input-group">
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password"
+                               placeholder="Enter your password"
+                               required
+                               autocomplete="current-password">
+                        <button class="btn btn-glass" type="button" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                        <label class="form-check-label text-white-50" for="rememberMe">
+                            Remember me
+                        </label>
+                    </div>
+                    <a href="{% url 'authentication:password_reset' %}" class="text-white-50 text-decoration-none">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 mb-3 py-2">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                </button>
+
+                <div class="text-center">
+                    <span class="text-white-50">Don't have an account? </span>
+                    <a href="{% url 'authentication:register' %}" class="text-white fw-bold text-decoration-none">
+                        Register here
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="glass-card p-3 mt-4">
+            <div class="text-center">
+                <h6 class="text-white mb-2">
+                    <i class="fas fa-shield-alt me-2"></i>Security Notice
+                </h6>
+                <small class="text-white-50">
+                    Your account will be locked after 5 failed login attempts. 
+                    Sessions expire after 15 minutes of inactivity for security.
+                </small>
+            </div>
+        </div>
+
+        <!-- Quick Access -->
+        <div class="glass-card p-3 mt-3">
+            <div class="text-center">
+                <h6 class="text-white mb-3">
+                    <i class="fas fa-rocket me-2"></i>Quick Access
+                </h6>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url 'library:book_search' %}" class="btn btn-glass btn-sm">
+                        <i class="fas fa-search me-1"></i>Browse Books
+                    </a>
+                    <a href="{% url 'library:dashboard' %}" class="btn btn-glass btn-sm">
+                        <i class="fas fa-home me-1"></i>Guest Mode
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test User Accounts -->
+        <div class="glass-card p-3 mt-3">
+            <div class="text-center">
+                <h6 class="text-white mb-3">
+                    <i class="fas fa-users me-2"></i>Demo User Accounts
+                </h6>
+                <small class="text-white-50 d-block mb-3">Click to auto-fill login credentials</small>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-glass btn-sm w-100 demo-user-btn" 
+                                onclick="fillCredentials('john_member', 'test123')">
+                            <i class="fas fa-user"></i>
+                            <div class="fw-bold">John Doe</div>
+                            <small>Basic Member</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-glass btn-sm w-100 demo-user-btn"
+                                onclick="fillCredentials('sara_premium', 'test123')">
+                            <i class="fas fa-star"></i>
+                            <div class="fw-bold">Sara Smith</div>
+                            <small>Premium Member</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-glass btn-sm w-100 demo-user-btn"
+                                onclick="fillCredentials('mike_librarian', 'test123')">
+                            <i class="fas fa-book"></i>
+                            <div class="fw-bold">Mike Wilson</div>
+                            <small>Librarian</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-glass btn-sm w-100 demo-user-btn"
+                                onclick="fillCredentials('admin', 'admin123')">
+                            <i class="fas fa-cog"></i>
+                            <div class="fw-bold">Admin</div>
+                            <small>System Admin</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePassword() {
+        const passwordField = document.getElementById('password');
+        const toggleIcon = document.getElementById('togglePasswordIcon');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+
+    function fillCredentials(username, password) {
+        document.getElementById('username').value = username;
+        document.getElementById('password').value = password;
+        
+        // Add a subtle animation to show the fields were filled
+        const usernameField = document.getElementById('username');
+        const passwordField = document.getElementById('password');
+        
+        usernameField.style.background = 'rgba(40, 167, 69, 0.1)';
+        passwordField.style.background = 'rgba(40, 167, 69, 0.1)';
+        
+        setTimeout(() => {
+            usernameField.style.background = '';
+            passwordField.style.background = '';
+        }, 1000);
+    }
+
+    // Auto-focus on username field
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameField = document.getElementById('username');
+        if (usernameField) {
+            usernameField.focus();
+        }
+    });
+</script>
+{% endblock %}

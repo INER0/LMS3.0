@@ -94,11 +94,110 @@ class RegisterView(View):
     template_name = 'authentication/register.html'
     
     def get(self, request):
+        # If user is already authenticated, redirect to dashboard
+        if request.user.is_authenticated:
+            return redirect('library:dashboard')
         return render(request, self.template_name)
     
     def post(self, request):
-        # TODO: Implement registration logic
-        return render(request, self.template_name)
+        # If user is already authenticated, redirect to dashboard
+        if request.user.is_authenticated:
+            return redirect('library:dashboard')
+            
+        # Extract form data
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        username = request.POST.get('username', '').strip()
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        date_of_birth = request.POST.get('date_of_birth')
+        phone_number = request.POST.get('phone_number', '').strip()
+        address = request.POST.get('address', '').strip()
+        membership_type = request.POST.get('membership_type', 'basic')
+        terms = request.POST.get('terms')
+        
+        # Validation
+        errors = []
+        
+        if not all([first_name, last_name, email, username, password1, password2]):
+            errors.append('All required fields must be filled.')
+        
+        if password1 != password2:
+            errors.append('Passwords do not match.')
+        
+        if len(password1) < 8:
+            errors.append('Password must be at least 8 characters long.')
+        
+        if not terms:
+            errors.append('You must agree to the Terms of Service.')
+        
+        # Check if username already exists
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        if User.objects.filter(username=username).exists():
+            errors.append('Username already exists. Please choose a different one.')
+        
+        if User.objects.filter(email=email).exists():
+            errors.append('Email already registered. Please use a different email.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return render(request, self.template_name)
+        
+        try:
+            # Create user
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password1,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Add optional fields
+            if date_of_birth:
+                user.date_of_birth = date_of_birth
+            if phone_number:
+                user.phone_number = phone_number
+            if address:
+                user.address = address
+            
+            # Assign membership
+            from .models import MembershipFee
+            try:
+                membership = MembershipFee.objects.get(membership_type=membership_type)
+                user.membership_fee = membership
+                user.membership_status = 'active'
+                user.membership_expiry = timezone.now().date() + timedelta(days=365)
+            except MembershipFee.DoesNotExist:
+                # Fallback to basic membership
+                try:
+                    basic_membership = MembershipFee.objects.get(membership_type='basic')
+                    user.membership_fee = basic_membership
+                    user.membership_status = 'active'
+                    user.membership_expiry = timezone.now().date() + timedelta(days=365)
+                except MembershipFee.DoesNotExist:
+                    pass  # No membership assigned
+            
+            user.save()
+            
+            # Auto-login the user
+            login(request, user)
+            
+            messages.success(
+                request,
+                f'Welcome to the Library Management System, {first_name}! '
+                f'Your account has been created successfully.'
+            )
+            
+            return redirect('library:dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'An error occurred during registration: {str(e)}')
+            return render(request, self.template_name)
 
 
 @method_decorator(login_required, name='dispatch')

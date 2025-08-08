@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-floating label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .form-floating .form-control:focus ~ label,
+    .form-floating .form-control:not(:placeholder-shown) ~ label {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .password-strength {
+        margin-top: 0.5rem;
+    }
+    
+    .password-strength .progress {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .strength-text {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+    
+    .membership-info {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .membership-option {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .membership-option:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .membership-option.selected {
+        border-color: #28a745;
+        background: rgba(40, 167, 69, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="glass-card p-5">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-plus display-3 text-white mb-3"></i>
+                <h2 class="text-white mb-2">Create Account</h2>
+                <p class="text-white-50">Join our library community</p>
+            </div>
+
+            <form method="post" class="needs-validation" novalidate id="registerForm">
+                {% csrf_token %}
+                
+                <!-- Personal Information -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="first_name" 
+                                   name="first_name"
+                                   placeholder="First Name"
+                                   required>
+                            <label for="first_name">
+                                <i class="fas fa-user me-2"></i>First Name
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="last_name" 
+                                   name="last_name"
+                                   placeholder="Last Name"
+                                   required>
+                            <label for="last_name">
+                                <i class="fas fa-user me-2"></i>Last Name
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <input type="email" 
+                               class="form-control" 
+                               id="email" 
+                               name="email"
+                               placeholder="Email Address"
+                               required>
+                        <label for="email">
+                            <i class="fas fa-envelope me-2"></i>Email Address
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username"
+                               placeholder="Username"
+                               required>
+                        <label for="username">
+                            <i class="fas fa-at me-2"></i>Username
+                        </label>
+                        <small class="text-white-50">Choose a unique username</small>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password1" 
+                                   name="password1"
+                                   placeholder="Password"
+                                   required>
+                            <label for="password1">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                        </div>
+                        <div class="password-strength">
+                            <div class="progress">
+                                <div class="progress-bar" id="passwordStrength" style="width: 0%"></div>
+                            </div>
+                            <div class="strength-text text-white-50" id="strengthText">
+                                Password strength
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password2" 
+                                   name="password2"
+                                   placeholder="Confirm Password"
+                                   required>
+                            <label for="password2">
+                                <i class="fas fa-lock me-2"></i>Confirm Password
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="date_of_birth" 
+                                   name="date_of_birth">
+                            <label for="date_of_birth">
+                                <i class="fas fa-calendar me-2"></i>Date of Birth
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="phone_number" 
+                                   name="phone_number"
+                                   placeholder="Phone Number">
+                            <label for="phone_number">
+                                <i class="fas fa-phone me-2"></i>Phone Number
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="form-floating">
+                        <textarea class="form-control" 
+                                  id="address" 
+                                  name="address"
+                                  placeholder="Address"
+                                  style="height: 80px;"></textarea>
+                        <label for="address">
+                            <i class="fas fa-map-marker-alt me-2"></i>Address
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Membership Selection -->
+                <div class="membership-info">
+                    <h6 class="text-white mb-3">
+                        <i class="fas fa-star me-2"></i>Choose Your Membership
+                    </h6>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 membership-option" 
+                                 data-membership="basic">
+                                <div class="text-center">
+                                    <i class="fas fa-user text-primary mb-2"></i>
+                                    <h6 class="text-white">Basic</h6>
+                                    <div class="text-white-50">
+                                        <small>MVR 50/month</small><br>
+                                        <small>3 Books • 14 Days</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 membership-option" 
+                                 data-membership="premium">
+                                <div class="text-center">
+                                    <i class="fas fa-star text-warning mb-2"></i>
+                                    <h6 class="text-white">Premium</h6>
+                                    <div class="text-white-50">
+                                        <small>MVR 75/month</small><br>
+                                        <small>5 Books • 14+7 Days</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 membership-option" 
+                                 data-membership="student">
+                                <div class="text-center">
+                                    <i class="fas fa-graduation-cap text-success mb-2"></i>
+                                    <h6 class="text-white">Student</h6>
+                                    <div class="text-white-50">
+                                        <small>MVR 30/month</small><br>
+                                        <small>4 Books • 21 Days</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="membership_type" id="membershipType" value="basic">
+                </div>
+
+                <!-- Terms and Privacy -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input type="checkbox" 
+                               class="form-check-input" 
+                               id="terms" 
+                               name="terms"
+                               required>
+                        <label class="form-check-label text-white-50" for="terms">
+                            I agree to the 
+                            <a href="#" class="text-white">Terms of Service</a> 
+                            and 
+                            <a href="#" class="text-white">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 mb-3 py-2">
+                    <i class="fas fa-user-plus me-2"></i>Create Account
+                </button>
+
+                <div class="text-center">
+                    <span class="text-white-50">Already have an account? </span>
+                    <a href="{% url 'authentication:login' %}" class="text-white fw-bold text-decoration-none">
+                        Sign in here
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Registration Benefits -->
+        <div class="glass-card p-3 mt-4">
+            <div class="text-center">
+                <h6 class="text-white mb-3">
+                    <i class="fas fa-gift me-2"></i>Member Benefits
+                </h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <small class="text-white-50">
+                            <i class="fas fa-book me-1"></i>Vast Book Collection
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-white-50">
+                            <i class="fas fa-bookmark me-1"></i>Book Reservations
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-white-50">
+                            <i class="fas fa-history me-1"></i>Loan History
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-white-50">
+                            <i class="fas fa-mobile-alt me-1"></i>Digital Services
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Membership selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const membershipOptions = document.querySelectorAll('.membership-option');
+        const membershipInput = document.getElementById('membershipType');
+        
+        // Set initial selection
+        document.querySelector('[data-membership="basic"]').classList.add('selected');
+        
+        membershipOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove selected class from all options
+                membershipOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Update hidden input
+                membershipInput.value = this.dataset.membership;
+            });
+        });
+        
+        // Password strength checker
+        const password1 = document.getElementById('password1');
+        const strengthBar = document.getElementById('passwordStrength');
+        const strengthText = document.getElementById('strengthText');
+        
+        password1.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            let text = 'Very Weak';
+            let color = '#dc3545';
+            
+            if (password.length >= 8) strength += 20;
+            if (password.match(/[a-z]/)) strength += 20;
+            if (password.match(/[A-Z]/)) strength += 20;
+            if (password.match(/[0-9]/)) strength += 20;
+            if (password.match(/[^A-Za-z0-9]/)) strength += 20;
+            
+            if (strength >= 80) {
+                text = 'Very Strong';
+                color = '#28a745';
+            } else if (strength >= 60) {
+                text = 'Strong';
+                color = '#ffc107';
+            } else if (strength >= 40) {
+                text = 'Medium';
+                color = '#fd7e14';
+            } else if (strength >= 20) {
+                text = 'Weak';
+                color = '#dc3545';
+            }
+            
+            strengthBar.style.width = strength + '%';
+            strengthBar.style.backgroundColor = color;
+            strengthText.textContent = text;
+            strengthText.style.color = color;
+        });
+        
+        // Password confirmation validation
+        const password2 = document.getElementById('password2');
+        password2.addEventListener('input', function() {
+            if (this.value !== password1.value) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Form validation
+        const form = document.getElementById('registerForm');
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %}

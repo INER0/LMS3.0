@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Books - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .book-item {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .book-item:hover {
+        border-left-color: #28a745;
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .search-box {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 25px;
+    }
+    
+    .search-box:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 2px;
+    }
+    
+    .book-cover {
+        width: 60px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white mb-1">
+                <i class="fas fa-books me-2"></i>Book Management
+            </h2>
+            <p class="text-white-50 mb-0">Manage your library's book collection</p>
+        </div>
+        <div>
+            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                <i class="fas fa-plus me-2"></i>Add New Book
+            </button>
+            <button class="btn btn-glass" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2 col-6 mb-3">
+            <div class="glass-card p-3 text-center stats-card">
+                <i class="fas fa-book text-primary mb-2" style="font-size: 2rem;"></i>
+                <h4 class="text-white mb-1">{{ stats.total_books }}</h4>
+                <small class="text-white-50">Total Books</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="glass-card p-3 text-center stats-card">
+                <i class="fas fa-copy text-info mb-2" style="font-size: 2rem;"></i>
+                <h4 class="text-white mb-1">{{ stats.total_copies }}</h4>
+                <small class="text-white-50">Total Copies</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="glass-card p-3 text-center stats-card">
+                <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                <h4 class="text-white mb-1">{{ stats.available_copies }}</h4>
+                <small class="text-white-50">Available</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="glass-card p-3 text-center stats-card">
+                <i class="fas fa-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i>
+                <h4 class="text-white mb-1">{{ stats.damaged_copies }}</h4>
+                <small class="text-white-50">Damaged</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="glass-card p-3 text-center stats-card">
+                <i class="fas fa-times-circle text-danger mb-2" style="font-size: 2rem;"></i>
+                <h4 class="text-white mb-1">{{ stats.lost_copies }}</h4>
+                <small class="text-white-50">Lost</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="glass-card p-3 text-center stats-card">
+                <i class="fas fa-percentage text-secondary mb-2" style="font-size: 2rem;"></i>
+                <h4 class="text-white mb-1">
+                    {% widthratio stats.available_copies stats.total_copies 100 %}%
+                </h4>
+                <small class="text-white-50">Availability</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="glass-card p-3 mb-4">
+        <form method="get" class="row align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-0 text-white-50">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control search-box border-0" 
+                           name="search" 
+                           placeholder="Search by title, ISBN, or author..."
+                           value="{{ request.GET.search }}"
+                           style="color: white;">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success flex-fill">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                    <a href="{% url 'library:manage_books' %}" class="btn btn-glass">
+                        <i class="fas fa-redo me-2"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Books List -->
+    <div class="glass-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-white mb-0">
+                <i class="fas fa-list me-2"></i>Books Library 
+                <span class="badge bg-primary">{{ books|length }}</span>
+            </h5>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-glass active" onclick="setView('list')">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button type="button" class="btn btn-glass" onclick="setView('grid')">
+                    <i class="fas fa-th"></i>
+                </button>
+            </div>
+        </div>
+
+        {% if books %}
+            <div id="booksList">
+                {% for book in books %}
+                    <div class="book-item p-3 border-bottom border-secondary">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                <div class="book-cover">
+                                    {% if book.title %}
+                                        {{ book.title.0|upper }}
+                                    {% else %}
+                                        <i class="fas fa-book"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-white mb-1">{{ book.title }}</h6>
+                                <p class="text-white-50 mb-1">
+                                    <i class="fas fa-user me-1"></i>
+                                    {% for author in book.authors.all %}
+                                        {{ author.name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        Unknown Author
+                                    {% endfor %}
+                                </p>
+                                <small class="text-white-50">
+                                    <i class="fas fa-barcode me-1"></i>{{ book.isbn|default:"No ISBN" }}
+                                </small>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <span class="badge bg-info">{{ book.category|default:"Uncategorized" }}</span>
+                                    <div class="text-white-50 mt-1">
+                                        <small>{{ book.publication_year|default:"Unknown" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <div class="text-white">
+                                        <i class="fas fa-copy me-1"></i>
+                                        <span class="fw-bold">{{ book.copies.count }}</span>
+                                    </div>
+                                    <small class="text-success">
+                                        {{ book.copies.all|length }} available
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-info action-btn" title="View Details" 
+                                            onclick="viewBook({{ book.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-warning action-btn" title="Edit Book"
+                                            onclick="editBook({{ book.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-success action-btn" title="Add Copy"
+                                            onclick="addCopy({{ book.id }})">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-secondary action-btn" title="Manage Copies"
+                                            onclick="manageCopies({{ book.id }})">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="btn btn-danger action-btn" title="Delete Book"
+                                            onclick="deleteBook({{ book.id }}, '{{ book.title }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="d-flex justify-content-center mt-4">
+                    <nav>
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link bg-transparent border-secondary text-white" 
+                                       href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                        &laquo; First
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link bg-transparent border-secondary text-white" 
+                                       href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                        Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link bg-primary border-primary">
+                                    {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link bg-transparent border-secondary text-white" 
+                                       href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                        Next
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link bg-transparent border-secondary text-white" 
+                                       href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                        Last &raquo;
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search text-white-50 mb-3" style="font-size: 3rem;"></i>
+                <h5 class="text-white-50">No books found</h5>
+                <p class="text-white-50 mb-3">
+                    {% if request.GET.search %}
+                        No books match your search criteria.
+                    {% else %}
+                        Start by adding your first book to the library.
+                    {% endif %}
+                </p>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                    <i class="fas fa-plus me-2"></i>Add First Book
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Book Modal -->
+<div class="modal fade" id="addBookModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-plus me-2"></i>Add New Book
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This feature will be implemented in the next update. For now, you can add books through the Django admin panel.
+                </p>
+                <div class="d-flex gap-2">
+                    <a href="/admin/library/book/add/" class="btn btn-success" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>Add via Admin Panel
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function setView(view) {
+        // Toggle view buttons
+        const buttons = document.querySelectorAll('.btn-group .btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // View switching logic can be implemented here
+        console.log('Switched to', view, 'view');
+    }
+
+    function viewBook(bookId) {
+        window.location.href = `/library/book/${bookId}/`;
+    }
+
+    function editBook(bookId) {
+        // Redirect to admin edit page for now
+        window.open(`/admin/library/book/${bookId}/change/`, '_blank');
+    }
+
+    function addCopy(bookId) {
+        // Add copy functionality
+        alert('Add copy functionality will be implemented soon.');
+    }
+
+    function manageCopies(bookId) {
+        // Manage copies functionality
+        alert('Manage copies functionality will be implemented soon.');
+    }
+
+    function deleteBook(bookId, bookTitle) {
+        if (confirm(`Are you sure you want to delete "${bookTitle}"? This action cannot be undone.`)) {
+            // Delete functionality
+            alert('Delete functionality will be implemented soon.');
+        }
+    }
+
+    // Auto-focus search input
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput && !searchInput.value) {
+            searchInput.focus();
+        }
+    });
+</script>
+{% endblock %}

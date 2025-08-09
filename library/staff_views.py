@@ -293,7 +293,23 @@ def staff_management(request):
         userrole__role__name__in=['librarian', 'manager']
     ).select_related().prefetch_related('userrole_set__role').distinct()
 
-    context = {'staff_users': staff_users}
+    # Add roles to each user for template access
+    for user in staff_users:
+        user.roles = [user_role.role for user_role in user.userrole_set.all()]
+
+    # Calculate stats
+    stats = {
+        'total_staff': staff_users.count(),
+        'librarians': staff_users.filter(userrole__role__name='librarian').distinct().count(),
+        'managers': staff_users.filter(userrole__role__name='manager').distinct().count(),
+        'active_today': staff_users.filter(is_active=True).count(),
+    }
+
+    context = {
+        'staff_members': staff_users,  # Changed from staff_users to staff_members
+        'stats': stats,
+        'branches': Branch.objects.all(),
+    }
     return render(request, 'library/staff_management.html', context)
 
 

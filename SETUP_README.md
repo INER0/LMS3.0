@@ -225,7 +225,56 @@ The database backup includes:
 - Touch-friendly interface elements
 - Accessible design patterns
 
-## 🔧 Customization
+## � Demo Accounts
+
+The system includes comprehensive demo accounts for testing all functionality:
+
+### 📋 Quick Setup
+```bash
+# Create all demo accounts (run after setup)
+python manage.py create_demo_accounts
+```
+
+### 🔐 Account Details
+
+#### 👤 **Member Account**
+- **Username**: `demo_member`
+- **Password**: `demo123`
+- **Access**: Library dashboard, book browsing, borrowing, payments
+- **Membership**: Basic (MVR 50/month)
+
+#### 👨‍💼 **Librarian Account**
+- **Username**: `demo_librarian`
+- **Password**: `demo123`
+- **Access**: Book management, circulation, member assistance
+- **Membership**: Premium (MVR 75/month)
+
+#### 🏢 **Manager Account**
+- **Username**: `demo_manager`
+- **Password**: `demo123`
+- **Access**: Full library management, staff management, reports
+- **Membership**: Premium (MVR 75/month)
+
+#### ⚙️ **Admin Account** (Django Admin)
+- **Username**: `demo_admin`
+- **Password**: `demo123`
+- **Access**: Django admin backend, system administration
+- **Note**: Automatically redirects to `/admin/` upon login
+
+#### 🛡️ **Super Admin Account** (Primary)
+- **Username**: `admin`
+- **Password**: `admin123`
+- **Access**: Full Django admin backend access
+- **Note**: Created during initial setup
+
+### 🎯 Testing Workflows
+
+1. **Member Experience**: Login as `demo_member` → Browse books → Borrow → Make payments
+2. **Librarian Workflow**: Login as `demo_librarian` → Manage circulation → Process returns
+3. **Manager Operations**: Login as `demo_manager` → View reports → Manage staff
+4. **System Admin**: Login as `demo_admin` or `admin` → Django admin interface
+
+## �🔧 Customization
 
 ### Membership Plans
 Edit `templates/payments/membership.html` to modify:
@@ -246,6 +295,57 @@ Update `templates/base.html` and custom CSS for:
 - Glass-morphism effects
 - Layout adjustments
 - Brand customization
+
+## 🧪 Demo Accounts
+
+The system includes comprehensive demo accounts for testing all user roles:
+
+### 👤 Member Account
+- **Username**: `demo_member`
+- **Password**: `demo123`
+- **Role**: Member
+- **Membership**: Basic (MVR 50/month)
+- **Access**: Library dashboard, book browsing, borrowing, reservations
+
+### 👨‍💼 Librarian Account  
+- **Username**: `demo_librarian`
+- **Password**: `demo123`
+- **Role**: Librarian
+- **Membership**: Premium (MVR 75/month)
+- **Access**: Library management, circulation system, member management
+
+### 👩‍💼 Manager Account
+- **Username**: `demo_manager` 
+- **Password**: `demo123`
+- **Role**: Manager
+- **Membership**: Premium (MVR 75/month)
+- **Access**: Full library management, staff management, analytics, reports
+
+### 🔧 Admin Account
+- **Username**: `demo_admin`
+- **Password**: `demo123`
+- **Role**: Admin (Super Admin)
+- **Access**: Django admin backend, full system control
+- **Redirect**: Automatically redirects to `/admin/` upon login
+
+### 🚀 Super Admin Account
+- **Username**: `admin`
+- **Password**: `admin123`  
+- **Role**: Admin (Super Admin)
+- **Access**: Django admin backend, full system control
+- **Redirect**: Automatically redirects to `/admin/` upon login
+
+### 🎯 Testing Workflow
+1. **Member Experience**: Login as `demo_member` to test book browsing and borrowing
+2. **Staff Operations**: Login as `demo_librarian` to manage circulation and members
+3. **Management Functions**: Login as `demo_manager` to access staff management and reports
+4. **System Administration**: Login as `demo_admin` or `admin` for Django admin access
+
+### 🔄 Recreating Demo Accounts
+To recreate or update demo accounts:
+```bash
+python manage.py create_demo_accounts
+```
 
 ## 🚨 Important Notes
 

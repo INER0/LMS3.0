@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Staff Dashboard - Library Management System{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="text-white mb-0">
+            <i class="fas fa-user-tie me-2"></i>Staff Dashboard
+        </h1>
+        <p class="text-white-50 mb-0">Manage library operations and services</p>
+    </div>
+    <div>
+        <a href="{% url 'library:dashboard' %}" class="btn btn-glass">
+            <i class="fas fa-home me-1"></i>Public Library
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Quick Stats -->
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <h4 class="text-dark mb-4">
+                <i class="fas fa-chart-line me-2"></i>Library Overview
+            </h4>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <div class="text-center p-3 rounded" style="background: rgba(13, 110, 253, 0.1);">
+                        <i class="fas fa-book text-primary display-6"></i>
+                        <h3 class="text-dark mt-2">{{ total_books }}</h3>
+                        <small class="text-muted">Total Books</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-center p-3 rounded" style="background: rgba(25, 135, 84, 0.1);">
+                        <i class="fas fa-copy text-success display-6"></i>
+                        <h3 class="text-dark mt-2">{{ total_copies }}</h3>
+                        <small class="text-muted">Book Copies</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-center p-3 rounded" style="background: rgba(255, 193, 7, 0.1);">
+                        <i class="fas fa-hand-holding text-warning display-6"></i>
+                        <h3 class="text-dark mt-2">{{ active_loans }}</h3>
+                        <small class="text-muted">Active Loans</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-center p-3 rounded" style="background: rgba(13, 202, 240, 0.1);">
+                        <i class="fas fa-bookmark text-info display-6"></i>
+                        <h3 class="text-dark mt-2">{{ pending_reservations }}</h3>
+                        <small class="text-muted">Pending Reservations</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-center p-3 rounded" style="background: rgba(220, 53, 69, 0.1);">
+                        <i class="fas fa-exclamation-triangle text-danger display-6"></i>
+                        <h3 class="text-dark mt-2">{{ overdue_loans }}</h3>
+                        <small class="text-muted">Overdue Books</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-center p-3 rounded" style="background: rgba(108, 117, 125, 0.1);">
+                        <i class="fas fa-money-bill text-secondary display-6"></i>
+                        <h3 class="text-dark mt-2">{{ unpaid_fines }}</h3>
+                        <small class="text-muted">Unpaid Fines</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-8">
+        <div class="glass-card p-4">
+            <h4 class="text-dark mb-4">
+                <i class="fas fa-tasks me-2"></i>Quick Actions
+            </h4>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <a href="{% url 'library:manage_books' %}" class="btn btn-glass w-100 p-3 text-start">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-books text-primary me-3 fs-3"></i>
+                            <div>
+                                <strong class="text-dark">Manage Books</strong>
+                                <br><small class="text-muted">Add, edit, and organize inventory</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'library:approve_reservations' %}" class="btn btn-glass w-100 p-3 text-start">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-clipboard-check text-info me-3 fs-3"></i>
+                            <div>
+                                <strong class="text-dark">Approve Reservations</strong>
+                                <br><small class="text-muted">Review and process requests</small>
+                                {% if pending_reservations > 0 %}
+                                <span class="badge bg-info">{{ pending_reservations }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'library:loan_management' %}" class="btn btn-glass w-100 p-3 text-start">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-check text-warning me-3 fs-3"></i>
+                            <div>
+                                <strong class="text-dark">Manage Loans</strong>
+                                <br><small class="text-muted">Track borrowing and returns</small>
+                                {% if overdue_loans > 0 %}
+                                <span class="badge bg-danger">{{ overdue_loans }} overdue</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'library:fine_management' %}" class="btn btn-glass w-100 p-3 text-start">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-receipt text-secondary me-3 fs-3"></i>
+                            <div>
+                                <strong class="text-dark">Manage Fines</strong>
+                                <br><small class="text-muted">Process payments and penalties</small>
+                                {% if unpaid_fines > 0 %}
+                                <span class="badge bg-secondary">{{ unpaid_fines }} unpaid</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Priority Actions -->
+    <div class="col-lg-4">
+        <div class="glass-card p-4">
+            <h4 class="text-dark mb-4">
+                <i class="fas fa-exclamation-circle me-2"></i>Priority Actions
+            </h4>
+            
+            {% if overdue_loans > 0 %}
+            <div class="alert alert-danger" role="alert">
+                <strong><i class="fas fa-clock me-1"></i>{{ overdue_loans }} Overdue Books</strong>
+                <br>Follow up with users for book returns.
+                <div class="mt-2">
+                    <a href="{% url 'library:loan_management' %}?filter=overdue" class="btn btn-sm btn-danger">
+                        View Overdue
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if pending_reservations > 0 %}
+            <div class="alert alert-info" role="alert">
+                <strong><i class="fas fa-bookmark me-1"></i>{{ pending_reservations }} Pending Reservations</strong>
+                <br>Approve reservations to improve service.
+                <div class="mt-2">
+                    <a href="{% url 'library:approve_reservations' %}" class="btn btn-sm btn-info">
+                        Process Now
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if unpaid_fines > 0 %}
+            <div class="alert alert-secondary" role="alert">
+                <strong><i class="fas fa-money-bill me-1"></i>{{ unpaid_fines }} Unpaid Fines</strong>
+                <br>Follow up on outstanding payments.
+                <div class="mt-2">
+                    <a href="{% url 'library:fine_management' %}?filter=unpaid" class="btn btn-sm btn-secondary">
+                        View Fines
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if overdue_loans == 0 and pending_reservations == 0 and unpaid_fines == 0 %}
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>All Up to Date!</strong>
+                <br>No urgent actions required at this time.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Additional Tools -->
+        <div class="glass-card p-4 mt-4">
+            <h5 class="text-dark mb-3">
+                <i class="fas fa-tools me-2"></i>Additional Tools
+            </h5>
+            <div class="d-grid gap-2">
+                <a href="{% url 'library:add_book' %}" class="btn btn-glass">
+                    <i class="fas fa-plus me-1"></i>Add New Book
+                </a>
+                <a href="{% url 'library:loan_management' %}" class="btn btn-glass">
+                    <i class="fas fa-list me-1"></i>View All Loans
+                </a>
+                {% is_manager user as user_is_manager %}
+                {% if user_is_manager %}
+                <a href="{% url 'library:manager_dashboard' %}" class="btn btn-success">
+                    <i class="fas fa-chart-pie me-1"></i>Manager Dashboard
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh dashboard every 5 minutes
+    setTimeout(function() {
+        location.reload();
+    }, 300000); // 5 minutes in milliseconds
+
+    // Add click animations to action buttons
+    document.querySelectorAll('.btn-glass').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

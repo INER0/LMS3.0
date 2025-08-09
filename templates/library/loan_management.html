@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Loan Management - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .loan-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    .loan-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .overdue {
+        border-left: 5px solid #dc3545;
+    }
+    
+    .due-soon {
+        border-left: 5px solid #ffc107;
+    }
+    
+    .returned {
+        border-left: 5px solid #28a745;
+    }
+    
+    .status-badge {
+        font-size: 0.8em;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="text-white mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Loan Management
+                    </h2>
+                    <div>
+                        <button class="btn btn-outline-light btn-sm me-2" onclick="refreshPage()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="exportLoans()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-3">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label text-white">Status:</label>
+                        <select name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="active">Active</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="returned">Returned</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-white">Branch:</label>
+                        <select name="branch" class="form-select">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.id }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-white">Search:</label>
+                        <input type="text" name="search" class="form-control" placeholder="Member or book title...">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-light w-100">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-book-open text-info fa-2x mb-2"></i>
+                <h4 class="text-white">{{ stats.active_loans }}</h4>
+                <small class="text-light">Active Loans</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+                <h4 class="text-white">{{ stats.overdue_loans }}</h4>
+                <small class="text-light">Overdue Loans</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                <h4 class="text-white">{{ stats.returned_today }}</h4>
+                <small class="text-light">Returned Today</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-money-bill-wave text-danger fa-2x mb-2"></i>
+                <h4 class="text-white">{{ stats.total_fines }}</h4>
+                <small class="text-light">Total Fines (MVR)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loans List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-3">Current Loans</h4>
+                
+                {% if loans %}
+                    <div class="row">
+                        {% for loan in loans %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card loan-card h-100 {% if loan.is_overdue %}overdue{% elif loan.due_soon %}due-soon{% elif loan.returned_date %}returned{% endif %}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0">{{ loan.book_copy.book.title|truncatechars:30 }}</h6>
+                                            <span class="status-badge bg-{% if loan.is_overdue %}danger{% elif loan.due_soon %}warning{% elif loan.returned_date %}success{% else %}primary{% endif %} text-white">
+                                                {% if loan.returned_date %}
+                                                    Returned
+                                                {% elif loan.is_overdue %}
+                                                    Overdue
+                                                {% elif loan.due_soon %}
+                                                    Due Soon
+                                                {% else %}
+                                                    Active
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="text-muted small mb-2">
+                                            <i class="fas fa-user me-1"></i>{{ loan.user.get_full_name|default:loan.user.username }}
+                                        </p>
+                                        
+                                        <p class="text-muted small mb-2">
+                                            <i class="fas fa-building me-1"></i>{{ loan.book_copy.branch.name }}
+                                        </p>
+                                        
+                                        <div class="d-flex justify-content-between text-muted small mb-3">
+                                            <span><i class="fas fa-calendar-alt me-1"></i>{{ loan.loan_date|date:"M d" }}</span>
+                                            <span><i class="fas fa-calendar-times me-1"></i>{{ loan.due_date|date:"M d" }}</span>
+                                        </div>
+                                        
+                                        {% if loan.fine_amount > 0 %}
+                                            <div class="alert alert-warning py-1 px-2 small mb-2">
+                                                <i class="fas fa-money-bill me-1"></i>Fine: {{ loan.fine_amount }} MVR
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <div class="btn-group w-100" role="group">
+                                            {% if not loan.returned_date %}
+                                                <button class="btn btn-sm btn-outline-success" onclick="returnBook({{ loan.id }})">
+                                                    <i class="fas fa-check me-1"></i>Return
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" onclick="renewLoan({{ loan.id }})">
+                                                    <i class="fas fa-redo me-1"></i>Renew
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-outline-info" onclick="viewDetails({{ loan.id }})">
+                                                    <i class="fas fa-eye me-1"></i>View
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                        <nav aria-label="Loans pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                        <h5 class="text-light">No loans found</h5>
+                        <p class="text-muted">Try adjusting your filters or check back later.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Return Book Modal -->
+<div class="modal fade" id="returnBookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Return Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to mark this book as returned?</p>
+                <div id="fineInfo" class="alert alert-info" style="display: none;">
+                    <strong>Fine Amount:</strong> <span id="fineAmount"></span> MVR
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmReturn">Confirm Return</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentLoanId = null;
+    
+    function returnBook(loanId) {
+        currentLoanId = loanId;
+        // You would typically fetch loan details here to calculate fines
+        const modal = new bootstrap.Modal(document.getElementById('returnBookModal'));
+        modal.show();
+    }
+    
+    function renewLoan(loanId) {
+        if (confirm('Are you sure you want to renew this loan for another 14 days?')) {
+            fetch(`/library/loans/${loanId}/renew/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Loan renewed successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message || 'Error renewing loan', 'danger');
+                }
+            });
+        }
+    }
+    
+    function viewDetails(loanId) {
+        window.location.href = `/library/loans/${loanId}/`;
+    }
+    
+    function refreshPage() {
+        location.reload();
+    }
+    
+    function exportLoans() {
+        window.open('/library/loans/export/', '_blank');
+    }
+    
+    document.getElementById('confirmReturn').addEventListener('click', function() {
+        if (currentLoanId) {
+            fetch(`/library/loans/${currentLoanId}/return/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Book returned successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('returnBookModal')).hide();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message || 'Error returning book', 'danger');
+                }
+            });
+        }
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

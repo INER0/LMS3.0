@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Approve Reservations - Library Management System{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="text-white mb-0">
+            <i class="fas fa-clipboard-check me-2"></i>Approve Reservations
+        </h1>
+        <p class="text-white-50 mb-0">Review and process pending book reservations</p>
+    </div>
+    <div>
+        <a href="{% url 'library:staff_dashboard' %}" class="btn btn-glass">
+            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="text-dark mb-0">
+                    <i class="fas fa-bookmark me-2"></i>Pending Reservations
+                </h4>
+                <span class="badge bg-info fs-6">{{ pending_count }} pending</span>
+            </div>
+
+            {% if reservations %}
+            <div class="table-responsive">
+                <table class="table table-glass">
+                    <thead>
+                        <tr>
+                            <th class="text-dark">User</th>
+                            <th class="text-dark">Book</th>
+                            <th class="text-dark">Reserved Date</th>
+                            <th class="text-dark">Queue Position</th>
+                            <th class="text-dark">Availability</th>
+                            <th class="text-dark">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in reservations %}
+                        <tr>
+                            <td class="text-dark">
+                                <strong>{{ reservation.user.get_full_name|default:reservation.user.username }}</strong>
+                                <br><small class="text-muted">{{ reservation.user.email }}</small>
+                            </td>
+                            <td class="text-dark">
+                                <strong>{{ reservation.book.title }}</strong>
+                                <br><small class="text-muted">by {{ reservation.book.authors.all.0.name|default:"Unknown Author" }}</small>
+                            </td>
+                            <td class="text-dark">{{ reservation.reservation_date|date:"M j, Y" }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ reservation.queue_position }}</span>
+                            </td>
+                            <td>
+                                {% if reservation.book.get_available_copies_count > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>{{ reservation.book.get_available_copies_count }} available
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>Not available
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if reservation.book.get_available_copies_count > 0 %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn btn-success btn-sm" 
+                                                onclick="return confirm('Approve this reservation?')">
+                                            <i class="fas fa-check me-1"></i>Approve
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-danger btn-sm" 
+                                                onclick="return confirm('Reject this reservation?')">
+                                            <i class="fas fa-times me-1"></i>Reject
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle text-success display-1"></i>
+                <h3 class="text-dark mt-3">No Pending Reservations</h3>
+                <p class="text-muted">All reservations have been processed. Great work!</p>
+                <a href="{% url 'library:staff_dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-1"></i>Return to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Panel -->
+{% if reservations %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h5 class="text-dark mb-3">
+                <i class="fas fa-info-circle me-2"></i>Processing Guidelines
+            </h5>
+            <ul class="list-unstyled text-dark">
+                <li class="mb-2">
+                    <i class="fas fa-check text-success me-2"></i>
+                    Approve reservations when books are available
+                </li>
+                <li class="mb-2">
+                    <i class="fas fa-clock text-warning me-2"></i>
+                    Consider queue position for fairness
+                </li>
+                <li class="mb-2">
+                    <i class="fas fa-user-check text-info me-2"></i>
+                    Verify member status before approval
+                </li>
+                <li class="mb-2">
+                    <i class="fas fa-envelope text-primary me-2"></i>
+                    Members will be notified automatically
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h5 class="text-dark mb-3">
+                <i class="fas fa-chart-bar me-2"></i>Reservation Stats
+            </h5>
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="text-center p-2 border rounded">
+                        <h4 class="text-info">{{ pending_count }}</h4>
+                        <small class="text-muted">Pending</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="text-center p-2 border rounded">
+                        <h4 class="text-success">{{ reservations|length }}</h4>
+                        <small class="text-muted">Today</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh page every 2 minutes to check for new reservations
+setTimeout(function() {
+    location.reload();
+}, 120000); // 2 minutes in milliseconds
+
+// Add confirmation dialogs with additional context
+document.querySelectorAll('form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        const action = form.querySelector('input[name="action"]').value;
+        const row = form.closest('tr');
+        const userName = row.querySelector('td:first-child strong').textContent;
+        const bookTitle = row.querySelector('td:nth-child(2) strong').textContent;
+        
+        let message = '';
+        if (action === 'approve') {
+            message = `Approve reservation for "${bookTitle}" by ${userName}?\n\nThis will create an active loan for the user.`;
+        } else if (action === 'reject') {
+            message = `Reject reservation for "${bookTitle}" by ${userName}?\n\nThe user will be notified of the rejection.`;
+        }
+        
+        if (!confirm(message)) {
+            e.preventDefault();
+        }
+    });
+});
+
+// Highlight available books for easy identification
+document.querySelectorAll('.badge.bg-success').forEach(function(badge) {
+    const row = badge.closest('tr');
+    row.style.backgroundColor = 'rgba(25, 135, 84, 0.05)';
+});
+</script>
+{% endblock %}

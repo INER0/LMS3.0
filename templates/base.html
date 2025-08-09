@@ -238,17 +238,78 @@
                                 <i class="fas fa-bookmark me-1"></i>Reservations
                             </a>
                         </li>
+                        
+                        <!-- Staff/Librarian Menu -->
                         {% if user.is_staff %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-briefcase me-1"></i>Staff
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'library:staff_dashboard' %}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Staff Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:manage_books' %}">
+                                        <i class="fas fa-book me-2"></i>Manage Books
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:approve_reservations' %}">
+                                        <i class="fas fa-check-circle me-2"></i>Approve Reservations
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:loan_management' %}">
+                                        <i class="fas fa-exchange-alt me-2"></i>Loan Management
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:fine_management' %}">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Fine Management
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Manager Menu -->
+                        {% if user.is_superuser %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user-tie me-1"></i>Manager
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'library:manager_dashboard' %}">
+                                        <i class="fas fa-chart-line me-2"></i>Manager Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:generate_report' %}">
+                                        <i class="fas fa-chart-bar me-2"></i>Reports
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:staff_management' %}">
+                                        <i class="fas fa-users me-2"></i>Staff Management
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:manager_branch_management' %}">
+                                        <i class="fas fa-building me-2"></i>Branch Management
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Admin Menu (for superusers only) -->
+                        {% if user.is_superuser %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-cogs me-1"></i>Admin
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin Panel</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'library:manage_books' %}">Manage Books</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'library:branch_management' %}">Branch Management</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'circulation:manage_loans' %}">Manage Loans</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'payments:reports' %}">Reports</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                                        <i class="fas fa-tools me-2"></i>Admin Panel
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:manage_books' %}">
+                                        <i class="fas fa-book me-2"></i>Manage Books
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:branch_management' %}">
+                                        <i class="fas fa-building me-2"></i>Branch Management
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:loan_management' %}">
+                                        <i class="fas fa-exchange-alt me-2"></i>Manage Loans
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'payments:reports' %}">
+                                        <i class="fas fa-chart-bar me-2"></i>Reports
+                                    </a></li>
                                 </ul>
                             </li>
                         {% endif %}
@@ -323,7 +384,7 @@
                         <a href="{% url 'library:manage_books' %}" class="sidebar-item">
                             <i class="fas fa-book me-2"></i>Manage Books
                         </a>
-                        <a href="{% url 'circulation:manage_loans' %}" class="sidebar-item">
+                        <a href="{% url 'library:loan_management' %}" class="sidebar-item">
                             <i class="fas fa-exchange-alt me-2"></i>Manage Loans
                         </a>
                         <a href="{% url 'payments:reports' %}" class="sidebar-item">

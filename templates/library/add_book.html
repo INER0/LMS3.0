@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Book - Library Management System{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="text-white mb-0">
+            <i class="fas fa-plus me-2"></i>Add New Book
+        </h1>
+        <p class="text-white-50 mb-0">Add a new book to the library collection</p>
+    </div>
+    <div>
+        <a href="{% url 'library:manage_books' %}" class="btn btn-glass">
+            <i class="fas fa-arrow-left me-1"></i>Back to Books
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="glass-card p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_isbn" class="form-label text-white">ISBN *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="isbn" 
+                               id="id_isbn"
+                               placeholder="Enter 10 or 13 digit ISBN"
+                               required>
+                        <small class="text-white-50">10 or 13 digit ISBN number</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="id_title" class="form-label text-white">Title *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="title" 
+                               id="id_title"
+                               placeholder="Enter book title"
+                               required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_category" class="form-label text-white">Category *</label>
+                        <select class="form-select" name="category" id="id_category" required>
+                            <option value="">Select category</option>
+                            <option value="fiction">Fiction</option>
+                            <option value="non-fiction">Non-Fiction</option>
+                            <option value="research">Research</option>
+                            <option value="children">Children's Books</option>
+                            <option value="academic">Academic</option>
+                            <option value="reference">Reference</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="id_language" class="form-label text-white">Language *</label>
+                        <select class="form-select" name="language" id="id_language" required>
+                            <option value="">Select language</option>
+                            <option value="dhivehi">Dhivehi</option>
+                            <option value="english">English</option>
+                            <option value="arabic">Arabic</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_edition" class="form-label text-white">Edition</label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="edition" 
+                               id="id_edition"
+                               placeholder="e.g., 1st Edition, 2nd Edition">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="id_publication_year" class="form-label text-white">Publication Year *</label>
+                        <input type="number" 
+                               class="form-control" 
+                               name="publication_year" 
+                               id="id_publication_year"
+                               min="1000" 
+                               max="2030"
+                               placeholder="e.g., 2024"
+                               required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_publisher" class="form-label text-white">Publisher *</label>
+                        <select class="form-select" name="publisher" id="id_publisher" required>
+                            <option value="">Select publisher</option>
+                            {% for publisher in form.publisher.field.queryset %}
+                                <option value="{{ publisher.id }}">{{ publisher.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-white-50">
+                            <a href="#" class="text-info" onclick="showAddPublisher()">Add new publisher</a>
+                        </small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="id_section" class="form-label text-white">Section *</label>
+                        <select class="form-select" name="section" id="id_section" required>
+                            <option value="">Select section</option>
+                            {% for section in form.section.field.queryset %}
+                                <option value="{{ section.id }}">{{ section.name }} ({{ section.branch.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_authors" class="form-label text-white">Authors *</label>
+                    <select class="form-select" name="authors" id="id_authors" multiple required>
+                        {% for author in form.authors.field.queryset %}
+                            <option value="{{ author.id }}">{{ author.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-white-50">Hold Ctrl/Cmd to select multiple authors. <a href="#" class="text-info" onclick="showAddAuthor()">Add new author</a></small>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'library:manage_books' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>Add Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Publisher Modal -->
+<div class="modal fade" id="addPublisherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Publisher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="publisherForm">
+                    <div class="mb-3">
+                        <label class="form-label">Publisher Name</label>
+                        <input type="text" class="form-control" id="publisherName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" id="publisherAddress" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="addPublisher()">Add Publisher</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Author Modal -->
+<div class="modal fade" id="addAuthorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Author</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="authorForm">
+                    <div class="mb-3">
+                        <label class="form-label">Author Name</label>
+                        <input type="text" class="form-control" id="authorName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="addAuthor()">Add Author</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showAddPublisher() {
+        const modal = new bootstrap.Modal(document.getElementById('addPublisherModal'));
+        modal.show();
+    }
+
+    function showAddAuthor() {
+        const modal = new bootstrap.Modal(document.getElementById('addAuthorModal'));
+        modal.show();
+    }
+
+    function addPublisher() {
+        const name = document.getElementById('publisherName').value;
+        const address = document.getElementById('publisherAddress').value;
+        
+        if (!name.trim()) {
+            alert('Please enter publisher name');
+            return;
+        }
+
+        // Add to select dropdown temporarily
+        const select = document.getElementById('id_publisher');
+        const option = new Option(name, `new_${Date.now()}`);
+        option.setAttribute('data-new', 'true');
+        option.setAttribute('data-name', name);
+        option.setAttribute('data-address', address);
+        select.add(option);
+        select.value = option.value;
+
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('addPublisherModal')).hide();
+        
+        // Reset form
+        document.getElementById('publisherForm').reset();
+    }
+
+    function addAuthor() {
+        const name = document.getElementById('authorName').value;
+        
+        if (!name.trim()) {
+            alert('Please enter author name');
+            return;
+        }
+
+        // Add to select dropdown temporarily
+        const select = document.getElementById('id_authors');
+        const option = new Option(name, `new_${Date.now()}`);
+        option.setAttribute('data-new', 'true');
+        option.setAttribute('data-name', name);
+        option.selected = true;
+        select.add(option);
+
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('addAuthorModal')).hide();
+        
+        // Reset form
+        document.getElementById('authorForm').reset();
+    }
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const isbn = document.getElementById('id_isbn').value;
+        const isbnRegex = /^\d{10}$|^\d{13}$/;
+        
+        if (!isbnRegex.test(isbn)) {
+            e.preventDefault();
+            alert('Please enter a valid 10 or 13 digit ISBN');
+            document.getElementById('id_isbn').focus();
+            return;
+        }
+    });
+</script>
+{% endblock %}

@@ -28,6 +28,46 @@
         border-left: 5px solid #28a745;
         opacity: 0.8;
     }
+    
+    /* Modal styling for better text visibility */
+    .modal-content {
+        background-color: #fff;
+        color: #333;
+    }
+    
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .modal-title {
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .modal-body .form-label {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .modal-body .form-control,
+    .modal-body .form-select {
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        color: #333;
+    }
+    
+    .modal-body .form-control:focus,
+    .modal-body .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    .modal-footer {
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
 </style>
 {% endblock %}
 
@@ -146,6 +186,8 @@
             <div class="glass-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="text-white mb-0">Fine Records</h4>
+                    {% comment %}
+                    <!-- Bulk action buttons removed for display-only mode -->
                     <div>
                         <button class="btn btn-outline-success btn-sm me-2" onclick="bulkWaiveFines()">
                             <i class="fas fa-hand-holding me-1"></i>Bulk Waive
@@ -154,6 +196,7 @@
                             <i class="fas fa-envelope me-1"></i>Send Reminders
                         </button>
                     </div>
+                    {% endcomment %}
                 </div>
                 
                 {% if fines %}
@@ -161,9 +204,12 @@
                         <table class="table table-dark table-striped">
                             <thead>
                                 <tr>
+                                    {% comment %}
+                                    <!-- Checkbox column removed for display-only mode -->
                                     <th>
                                         <input type="checkbox" id="selectAll" onchange="toggleAllSelection()">
                                     </th>
+                                    {% endcomment %}
                                     <th>Member</th>
                                     <th>Book</th>
                                     <th>Branch</th>
@@ -177,9 +223,12 @@
                             <tbody>
                                 {% for fine in fines %}
                                     <tr class="{% if fine.amount > 50 %}high-fine{% elif fine.amount > 10 %}medium-fine{% elif fine.paid %}paid-fine{% else %}low-fine{% endif %}">
+                                        {% comment %}
+                                        <!-- Checkbox column removed for display-only mode -->
                                         <td>
                                             <input type="checkbox" class="fine-checkbox" value="{{ fine.id }}">
                                         </td>
+                                        {% endcomment %}
                                         <td>
                                             <strong>{{ fine.book_loan.user.get_full_name|default:fine.book_loan.user.username }}</strong>
                                             <br>
@@ -210,6 +259,8 @@
                                             {% endif %}
                                         </td>
                                         <td>
+                                            {% comment %}
+                                            <!-- Fine action buttons removed for display-only mode -->
                                             <div class="btn-group" role="group">
                                                 {% if not fine.paid %}
                                                     <button class="btn btn-sm btn-outline-success" onclick="markAsPaid({{ fine.id }})">
@@ -227,6 +278,8 @@
                                                     </button>
                                                 {% endif %}
                                             </div>
+                                            {% endcomment %}
+                                            <span class="text-muted">-</span>
                                         </td>
                                     </tr>
                                 {% endfor %}

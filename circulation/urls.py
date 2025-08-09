@@ -29,4 +29,8 @@ urlpatterns = [
     # Staff views
     path('manage/loans/', views.ManageLoansView.as_view(),
          name='manage_loans'),
+    path('manage/return/<int:loan_id>/', views.StaffReturnBookView.as_view(),
+         name='staff_return'),
+    path('manage/extend/<int:loan_id>/', views.StaffExtendLoanView.as_view(),
+         name='staff_extend'),
 ]

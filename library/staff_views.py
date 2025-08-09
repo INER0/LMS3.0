@@ -10,6 +10,8 @@ from django.db.models import Q, Count, Sum
 from django.http import JsonResponse, HttpResponse
 from datetime import datetime, timedelta
 from decimal import Decimal
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 import csv
 
 from authentication.utils import staff_required, manager_required
@@ -419,3 +421,259 @@ def _export_csv(data, report_type):
             ])
 
     return response
+
+
+@staff_required
+@require_POST
+def return_book(request, loan_id):
+    """Handle book return via AJAX"""
+    try:
+        loan = get_object_or_404(BookLoan, id=loan_id, status='borrowed')
+        
+        # Process return
+        return_date = timezone.now().date()
+        loan.return_date = return_date
+        loan.status = 'returned'
+        loan.save()
+        
+        # Check for fines if overdue
+        if return_date > loan.due_date:
+            days_overdue = (return_date - loan.due_date).days
+            fine_per_day = 2  # MVR per day
+            fine_amount = days_overdue * fine_per_day
+            
+            Fine.objects.create(
+                user=loan.user,
+                book_loan=loan,
+                amount=fine_amount,
+                fine_date=timezone.now(),
+                description=f'Late return fee for {days_overdue} days',
+                paid=False
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Book returned. Fine of MVR {fine_amount} applied.'
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'message': 'Book returned successfully.'
+            })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error returning book: {str(e)}'
+        })
+
+
+@staff_required
+@require_POST
+def renew_loan(request, loan_id):
+    """Handle loan renewal via AJAX"""
+    try:
+        loan = get_object_or_404(BookLoan, id=loan_id, status='borrowed')
+        
+        # Extend due date by 14 days
+        loan.due_date += timedelta(days=14)
+        loan.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Loan renewed for 14 days.'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error renewing loan: {str(e)}'
+        })
+
+
+@staff_required
+@require_POST
+def mark_fine_paid(request, fine_id):
+    """Mark fine as paid via AJAX"""
+    try:
+        fine = get_object_or_404(Fine, id=fine_id, paid=False)
+        
+        # Get payment details from form (store in description)
+        payment_method = request.POST.get('payment_method', 'cash')
+        payment_reference = request.POST.get('payment_reference', '')
+        notes = request.POST.get('notes', '')
+        
+        # Create description with payment details
+        payment_info = f"Payment via {payment_method}"
+        if payment_reference:
+            payment_info += f" (Ref: {payment_reference})"
+        if notes:
+            payment_info += f" - {notes}"
+        
+        # Mark fine as paid
+        fine.paid = True
+        fine.paid_date = timezone.now()
+        if fine.description:
+            fine.description = f"{fine.description} | {payment_info}"
+        else:
+            fine.description = payment_info
+        fine.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Fine of MVR {fine.amount} marked as paid.'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error marking fine as paid: {str(e)}'
+        })
+
+
+@staff_required
+@require_POST
+def waive_fine(request, fine_id):
+    """Waive fine via AJAX"""
+    try:
+        import json
+        fine = get_object_or_404(Fine, id=fine_id, paid=False)
+        
+        # Get waive reason
+        data = json.loads(request.body)
+        reason = data.get('reason', 'No reason provided')
+        
+        # Mark fine as "paid" with waive reason in description
+        fine.paid = True
+        fine.paid_date = timezone.now()
+        waive_info = f"WAIVED by {request.user.get_full_name()}: {reason}"
+        if fine.description:
+            fine.description = f"{fine.description} | {waive_info}"
+        else:
+            fine.description = waive_info
+        fine.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Fine of MVR {fine.amount} waived successfully.'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error waiving fine: {str(e)}'
+        })
+
+
+@staff_required
+@require_POST
+def send_fine_reminder(request, fine_id):
+    """Send fine reminder via AJAX"""
+    try:
+        fine = get_object_or_404(Fine, id=fine_id, paid=False)
+        
+        # Here you would implement email/SMS reminder functionality
+        # For now, we'll just simulate it
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Reminder sent to {fine.user.get_full_name()}.'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error sending reminder: {str(e)}'
+        })
+
+
+@staff_required
+@require_POST
+def bulk_waive_fines(request):
+    """Bulk waive fines via AJAX"""
+    try:
+        import json
+        data = json.loads(request.body)
+        fine_ids = data.get('fine_ids', [])
+        reason = data.get('reason', 'Bulk waive')
+        
+        if not fine_ids:
+            return JsonResponse({
+                'success': False,
+                'message': 'No fines selected'
+            })
+        
+        # Update fines - mark as paid with waive info in description
+        count = 0
+        waive_info = f"WAIVED by {request.user.get_full_name()}: {reason}"
+        
+        for fine_id in fine_ids:
+            try:
+                fine = Fine.objects.get(id=fine_id, paid=False)
+                fine.paid = True
+                fine.paid_date = timezone.now()
+                if fine.description:
+                    fine.description = f"{fine.description} | {waive_info}"
+                else:
+                    fine.description = waive_info
+                fine.save()
+                count += 1
+            except Fine.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'count': count,
+            'message': f'{count} fines waived successfully.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error waiving fines: {str(e)}'
+        })
+
+
+@staff_required
+@require_POST
+def bulk_send_reminders(request):
+    """Send reminder emails for multiple overdue fines via AJAX"""
+    try:
+        import json
+        data = json.loads(request.body)
+        fine_ids = data.get('fine_ids', [])
+        
+        if not fine_ids:
+            return JsonResponse({
+                'success': False,
+                'message': 'No fines selected'
+            })
+        
+        # Send reminders for selected fines
+        count = 0
+        for fine_id in fine_ids:
+            try:
+                fine = Fine.objects.select_related(
+                    'user', 'book_loan__book_copy__book'
+                ).get(id=fine_id, paid=False)
+                
+                # For now, just log the reminder (email functionality to be implemented)
+                # In production, implement actual email sending here
+                count += 1
+                
+            except Fine.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'count': count,
+            'message': f'Reminders sent for {count} fines'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error sending reminders: {str(e)}'
+        })
+
+

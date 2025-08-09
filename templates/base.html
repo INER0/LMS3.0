@@ -32,12 +32,16 @@
             border: 1px solid var(--glass-border);
             border-radius: 15px;
             box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            position: relative;
+            z-index: 1;
         }
 
         .navbar {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1060;
+            position: relative;
         }
 
         .navbar-brand, .nav-link {
@@ -48,6 +52,29 @@
         .nav-link:hover {
             color: #f8f9fa !important;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .dropdown-menu {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1070 !important;
+            position: absolute !important;
+        }
+
+        .dropdown-item {
+            color: #fff !important;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-item:hover, .dropdown-item:focus {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff !important;
+        }
+
+        .nav-item.dropdown {
+            position: relative;
+            z-index: 1065;
         }
 
         .btn-glass {
@@ -176,12 +203,18 @@
                 left: -100%;
                 width: 250px;
                 height: calc(100vh - 76px);
-                z-index: 1050;
+                z-index: 1055;
                 transition: left 0.3s ease;
             }
 
             .sidebar.show {
                 left: 0;
+            }
+
+            .dropdown-menu {
+                background: rgba(0, 0, 0, 0.9) !important;
+                backdrop-filter: blur(15px);
+                z-index: 1080 !important;
             }
         }
 
@@ -197,6 +230,26 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* Additional dropdown fixes */
+        .navbar-nav .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-top: 0.5rem;
+        }
+
+        .dropdown-toggle::after {
+            border-top-color: white;
+        }
+
+        /* Ensure dropdowns don't get clipped */
+        .navbar-collapse {
+            overflow: visible !important;
+        }
+
+        .nav-item.dropdown:hover .dropdown-menu {
+            display: block;
         }
     </style>
 
@@ -381,14 +434,20 @@
                         {% if user.is_staff %}
                         <hr class="text-white-50">
                         <h6 class="text-white-50 text-uppercase">Management</h6>
+                        <a href="{% url 'library:staff_dashboard' %}" class="sidebar-item">
+                            <i class="fas fa-tachometer-alt me-2"></i>Staff Dashboard
+                        </a>
                         <a href="{% url 'library:manage_books' %}" class="sidebar-item">
                             <i class="fas fa-book me-2"></i>Manage Books
+                        </a>
+                        <a href="{% url 'library:approve_reservations' %}" class="sidebar-item">
+                            <i class="fas fa-check-circle me-2"></i>Approve Reservations
                         </a>
                         <a href="{% url 'library:loan_management' %}" class="sidebar-item">
                             <i class="fas fa-exchange-alt me-2"></i>Manage Loans
                         </a>
-                        <a href="{% url 'payments:reports' %}" class="sidebar-item">
-                            <i class="fas fa-chart-bar me-2"></i>Reports
+                        <a href="{% url 'library:fine_management' %}" class="sidebar-item">
+                            <i class="fas fa-money-bill-wave me-2"></i>Fine Management
                         </a>
                         {% endif %}
                     </div>
@@ -450,6 +509,28 @@
                 bsAlert.close();
             });
         }, 5000);
+
+        // Ensure dropdowns work properly
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all dropdowns
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl, {
+                    boundary: 'viewport',
+                    display: 'dynamic'
+                });
+            });
+            
+            // Fix dropdown positioning
+            dropdownElementList.forEach(function(dropdown) {
+                dropdown.addEventListener('shown.bs.dropdown', function() {
+                    this.parentElement.style.zIndex = '1070';
+                });
+                dropdown.addEventListener('hidden.bs.dropdown', function() {
+                    this.parentElement.style.zIndex = '1065';
+                });
+            });
+        });
 
         // Loading states for buttons
         function showLoading(button) {

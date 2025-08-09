@@ -298,9 +298,8 @@ class AddBookView(CreateView):
     model = Book
     template_name = 'library/add_book.html'
     fields = [
-        'title', 'authors', 'publisher', 'isbn', 'publication_date',
-        'category', 'language', 'pages', 'description', 'edition',
-        'section'
+        'isbn', 'title', 'category', 'edition', 'publication_year',
+        'language', 'publisher', 'section', 'authors'
     ]
     success_url = reverse_lazy('library:manage_books')
     
@@ -321,9 +320,8 @@ class EditBookView(UpdateView):
     model = Book
     template_name = 'library/edit_book.html'
     fields = [
-        'title', 'authors', 'publisher', 'isbn', 'publication_date',
-        'category', 'language', 'pages', 'description', 'edition',
-        'section'
+        'isbn', 'title', 'category', 'edition', 'publication_year',
+        'language', 'publisher', 'section', 'authors'
     ]
     success_url = reverse_lazy('library:manage_books')
     
@@ -361,7 +359,7 @@ class AddBookCopyView(CreateView):
     """Add a copy of an existing book"""
     model = BookCopy
     template_name = 'library/add_book_copy.html'
-    fields = ['condition', 'notes']
+    fields = ['branch', 'section', 'barcode', 'purchase_price', 'condition']
     
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_staff:
@@ -373,6 +371,11 @@ class AddBookCopyView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['book'] = self.book
+        # Get available and borrowed copy counts
+        all_copies = BookCopy.objects.filter(book=self.book)
+        context['total_copies'] = all_copies.count()
+        available_count = sum(1 for copy in all_copies if copy.is_available())
+        context['available_copies'] = available_count
         return context
     
     def form_valid(self, form):
@@ -390,7 +393,7 @@ class ManageBookCopiesView(ListView):
     """Manage copies of a specific book"""
     model = BookCopy
     template_name = 'library/manage_book_copies.html'
-    context_object_name = 'copies'
+    context_object_name = 'book_copies'
     paginate_by = 20
     
     def dispatch(self, request, *args, **kwargs):
@@ -401,18 +404,86 @@ class ManageBookCopiesView(ListView):
         return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
-        return BookCopy.objects.filter(book=self.book).order_by('-created_at')
+        return BookCopy.objects.filter(book=self.book).select_related(
+            'branch', 'section'
+        ).order_by('-last_seen')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['book'] = self.book
-        context['stats'] = {
-            'total_copies': self.get_queryset().count(),
-            'available': self.get_queryset().filter(condition='good').count(),
-            'damaged': self.get_queryset().filter(condition='damaged').count(),
-            'lost': self.get_queryset().filter(condition='lost').count(),
-        }
+        
+        # Get all copies for statistics
+        all_copies = self.get_queryset()
+        context['total_copies'] = all_copies.count()
+        context['available_copies'] = sum(
+            1 for copy in all_copies if copy.is_available()
+        )
+        context['borrowed_copies'] = sum(
+            1 for copy in all_copies if not copy.is_available()
+            and copy.condition == 'good'
+        )
+        context['other_copies'] = sum(
+            1 for copy in all_copies if copy.condition != 'good'
+        )
+        
+        # Get all branches for filtering
+        context['branches'] = Branch.objects.all()
+        
         return context
+
+
+@method_decorator(login_required, name='dispatch')
+class EditBookCopyView(UpdateView):
+    """Edit an existing book copy"""
+    model = BookCopy
+    template_name = 'library/edit_book_copy.html'
+    fields = ['branch', 'section', 'barcode', 'purchase_price', 'condition']
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'Access denied.')
+            return redirect('library:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['book'] = self.object.book
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Book copy updated successfully!')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('library:manage_book_copies',
+                            kwargs={'pk': self.object.book.pk})
+
+
+@method_decorator(login_required, name='dispatch')
+class DeleteBookCopyView(DeleteView):
+    """Delete a book copy"""
+    model = BookCopy
+    template_name = 'library/delete_book_copy.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'Access denied.')
+            return redirect('library:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['book'] = self.object.book
+        return context
+    
+    def delete(self, request, *args, **kwargs):
+        book = self.get_object().book
+        messages.success(request, 'Book copy deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        return reverse_lazy('library:manage_book_copies',
+                            kwargs={'pk': self.object.book.pk})
 
 
 @method_decorator(login_required, name='dispatch')

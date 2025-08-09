@@ -13,7 +13,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import BookLoan, Reservation, Fine
+from .models import BookLoan, Reservation, Fine, LoanExtension
 from library.models import Book, BookCopy
 
 
@@ -404,6 +404,102 @@ class ReturnBookView(View):
             messages.success(request, 'Book returned successfully.')
         
         return redirect('circulation:my_loans')
+
+
+@method_decorator(login_required, name='dispatch')
+class StaffReturnBookView(View):
+    """Staff return book view - allows staff to return books for any user"""
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'Access denied. Staff access required.')
+            return redirect('library:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def post(self, request, loan_id):
+        loan = get_object_or_404(
+            BookLoan,
+            id=loan_id,
+            status='borrowed'
+        )
+        
+        # Process return
+        return_date = timezone.now().date()
+        loan.return_date = return_date
+        loan.status = 'returned'
+        loan.save()
+        
+        # Check for fines if overdue
+        apply_fine = request.POST.get('apply_fine') == 'on'
+        if return_date > loan.due_date and apply_fine:
+            days_overdue = (return_date - loan.due_date).days
+            # Calculate fine based on rules (simplified)
+            fine_per_day = 2  # MVR per day
+            fine_amount = days_overdue * fine_per_day
+            
+            Fine.objects.create(
+                user=loan.user,
+                book_loan=loan,
+                amount=fine_amount,
+                fine_date=timezone.now(),
+                description=f'Late return fee for {days_overdue} days',
+                paid=False
+            )
+            
+            messages.warning(
+                request,
+                f'Book returned for {loan.user.get_full_name()}. '
+                f'A fine of MVR {fine_amount} has been applied '
+                f'for late return.'
+            )
+        else:
+            messages.success(
+                request,
+                f'Book returned successfully for {loan.user.get_full_name()}.'
+            )
+        
+        return redirect('circulation:manage_loans')
+
+
+@method_decorator(login_required, name='dispatch')
+class StaffExtendLoanView(View):
+    """Staff extend loan view - allows staff to extend loans for any user"""
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'Access denied. Staff access required.')
+            return redirect('library:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def post(self, request, loan_id):
+        loan = get_object_or_404(
+            BookLoan,
+            id=loan_id,
+            status='borrowed'
+        )
+        
+        # Get extension days from request
+        extension_days = int(request.POST.get('extension_days', 7))
+        
+        # Create extension record
+        LoanExtension.objects.create(
+            book_loan=loan,
+            extended_by_days=extension_days,
+            extended_by=request.user,
+            extension_date=timezone.now()
+        )
+        
+        # Update due date
+        loan.due_date += timedelta(days=extension_days)
+        loan.save()
+        
+        messages.success(
+            request,
+            f'Loan extended by {extension_days} days for '
+            f'{loan.user.get_full_name()}.'
+        )
+        
+        return redirect('circulation:manage_loans')
 
 
 # Staff views

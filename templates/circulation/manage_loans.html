@@ -3,6 +3,7 @@
 {% block title %}Manage Loans - Staff{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
@@ -324,32 +325,86 @@ function extendLoan(loanId, bookTitle) {
 }
 
 function confirmReturn() {
-    // Simulate processing return
+    if (!currentLoanId) return;
+    
     const button = event.target;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
     button.disabled = true;
     
-    setTimeout(() => {
-        bootstrap.Modal.getInstance(document.getElementById('returnModal')).hide();
-        showAlert('success', 'Book returned successfully!');
-        // Refresh the page to show updated data
-        location.reload();
-    }, 1500);
+    // Create form data
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    // Check if fine should be applied
+    const applyFine = document.getElementById('applyFine').checked;
+    if (applyFine) {
+        formData.append('apply_fine', 'on');
+    }
+    
+    // Make POST request to staff return endpoint
+    fetch(`/circulation/manage/return/${currentLoanId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('returnModal')).hide();
+            showAlert('success', 'Book returned successfully!');
+            // Refresh the page to show updated data
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            throw new Error('Return failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        showAlert('danger', 'Failed to process return. Please try again.');
+    });
 }
 
 function confirmExtend() {
+    if (!currentLoanId) return;
+    
     const days = document.getElementById('extensionDays').value;
     const button = event.target;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Extending...';
     button.disabled = true;
     
-    setTimeout(() => {
-        bootstrap.Modal.getInstance(document.getElementById('extendModal')).hide();
-        showAlert('success', `Loan extended by ${days} days successfully!`);
-        location.reload();
-    }, 1500);
+    // Create form data
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    formData.append('extension_days', days);
+    
+    // Make POST request to staff extend endpoint
+    fetch(`/circulation/manage/extend/${currentLoanId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('extendModal')).hide();
+            showAlert('success', `Loan extended by ${days} days successfully!`);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            throw new Error('Extension failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        showAlert('danger', 'Failed to extend loan. Please try again.');
+    });
 }
 
 function exportData() {

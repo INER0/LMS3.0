@@ -33,6 +33,7 @@
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
@@ -169,6 +170,8 @@
                                             </div>
                                         {% endif %}
                                         
+                                        {% comment %}
+                                        <!-- Loan action buttons removed for display-only mode -->
                                         <div class="btn-group w-100" role="group">
                                             {% if not loan.returned_date %}
                                                 <button class="btn btn-sm btn-outline-success" onclick="returnBook({{ loan.id }})">
@@ -183,6 +186,7 @@
                                                 </button>
                                             {% endif %}
                                         </div>
+                                        {% endcomment %}
                                     </div>
                                 </div>
                             </div>

@@ -69,7 +69,7 @@
             <p class="text-white-50 mb-0">Manage your library's book collection</p>
         </div>
         <div>
-            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addBookModal">
+            <button class="btn btn-success me-2" onclick="addNewBook()">
                 <i class="fas fa-plus me-2"></i>Add New Book
             </button>
             <button class="btn btn-glass" onclick="window.print()">
@@ -304,7 +304,7 @@
                         Start by adding your first book to the library.
                     {% endif %}
                 </p>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                <button class="btn btn-success" onclick="addNewBook()">
                     <i class="fas fa-plus me-2"></i>Add First Book
                 </button>
             </div>
@@ -312,31 +312,7 @@
     </div>
 </div>
 
-<!-- Add Book Modal -->
-<div class="modal fade" id="addBookModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title text-white">
-                    <i class="fas fa-plus me-2"></i>Add New Book
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-white-50">
-                    <i class="fas fa-info-circle me-2"></i>
-                    This feature will be implemented in the next update. For now, you can add books through the Django admin panel.
-                </p>
-                <div class="d-flex gap-2">
-                    <a href="/admin/library/book/add/" class="btn btn-success" target="_blank">
-                        <i class="fas fa-external-link-alt me-2"></i>Add via Admin Panel
-                    </a>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -352,29 +328,34 @@
     }
 
     function viewBook(bookId) {
-        window.location.href = `/library/book/${bookId}/`;
+        window.open(`/library/books/${bookId}/`, '_blank');
     }
 
     function editBook(bookId) {
-        // Redirect to admin edit page for now
-        window.open(`/admin/library/book/${bookId}/change/`, '_blank');
+        // Redirect to custom edit page
+        window.location.href = `/library/manage/books/${bookId}/edit/`;
     }
 
     function addCopy(bookId) {
         // Add copy functionality
-        alert('Add copy functionality will be implemented soon.');
+        window.location.href = `/library/manage/books/${bookId}/add-copy/`;
     }
 
     function manageCopies(bookId) {
         // Manage copies functionality
-        alert('Manage copies functionality will be implemented soon.');
+        window.location.href = `/library/manage/books/${bookId}/copies/`;
     }
 
     function deleteBook(bookId, bookTitle) {
         if (confirm(`Are you sure you want to delete "${bookTitle}"? This action cannot be undone.`)) {
             // Delete functionality
-            alert('Delete functionality will be implemented soon.');
+            window.location.href = `/library/manage/books/${bookId}/delete/`;
         }
+    }
+
+    // Add new book function
+    function addNewBook() {
+        window.location.href = '/library/manage/books/add/';
     }
 
     // Auto-focus search input

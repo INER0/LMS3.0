@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Pay Fine - Library Management System{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb text-white-50">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'library:dashboard' %}" class="text-white-50 text-decoration-none">
+                        <i class="fas fa-home me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'circulation:my_fines' %}" class="text-white-50 text-decoration-none">
+                        <i class="fas fa-money-bill me-1"></i>My Fines
+                    </a>
+                </li>
+                <li class="breadcrumb-item active text-white">Pay Fine</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="{% url 'circulation:my_fines' %}" class="btn btn-glass">
+            <i class="fas fa-arrow-left me-1"></i>Back to Fines
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="glass-card p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-credit-card text-warning display-4"></i>
+                <h2 class="text-white mt-3">Pay Fine</h2>
+                <p class="text-white-50">Complete your fine payment</p>
+            </div>
+
+            <!-- Fine Details -->
+            <div class="glass-card p-3 mb-4" style="background: rgba(255, 193, 7, 0.1);">
+                <h5 class="text-white mb-3">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Fine Details
+                </h5>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <strong class="text-white">Book:</strong>
+                        <span class="text-white-50 ms-2">{{ book_title }}</span>
+                    </div>
+                    <div class="col-12">
+                        <strong class="text-white">Barcode:</strong>
+                        <span class="text-white-50 ms-2">{{ book_barcode }}</span>
+                    </div>
+                    <div class="col-12">
+                        <strong class="text-white">Fine Type:</strong>
+                        <span class="text-white-50 ms-2">{{ fine.get_fine_type_display|title }}</span>
+                    </div>
+                    <div class="col-12">
+                        <strong class="text-white">Description:</strong>
+                        <span class="text-white-50 ms-2">{{ fine.description }}</span>
+                    </div>
+                    <div class="col-12">
+                        <strong class="text-white">Fine Date:</strong>
+                        <span class="text-white-50 ms-2">{{ fine.fine_date|date:"M j, Y g:i A" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amount to Pay -->
+            <div class="text-center mb-4">
+                <h3 class="text-white mb-2">Amount to Pay</h3>
+                <div class="display-5 text-warning fw-bold">MVR {{ fine.amount|floatformat:2 }}</div>
+            </div>
+
+            <!-- Payment Form -->
+            <form method="post" id="paymentForm">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label text-white">
+                        <i class="fas fa-credit-card me-2"></i>Payment Method
+                    </label>
+                    <select name="payment_method" class="form-select" required>
+                        <option value="cash">Cash</option>
+                        <option value="card">Credit/Debit Card</option>
+                        <option value="online">Online Banking</option>
+                        <option value="mobile">Mobile Payment</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmPayment" required>
+                        <label class="form-check-label text-white" for="confirmPayment">
+                            I confirm that I want to pay this fine of MVR {{ fine.amount|floatformat:2 }}
+                        </label>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-3">
+                    <button type="submit" class="btn btn-success btn-lg" id="payButton" disabled>
+                        <i class="fas fa-credit-card me-2"></i>Pay MVR {{ fine.amount|floatformat:2 }}
+                    </button>
+                    <a href="{% url 'circulation:my_fines' %}" class="btn btn-glass">
+                        <i class="fas fa-times me-2"></i>Cancel Payment
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Processing Modal -->
+<div class="modal fade" id="processingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-warning mb-3" role="status"></div>
+                <h5 class="text-white">Processing Payment...</h5>
+                <p class="text-white-50 mb-0">Please wait while we process your payment.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheckbox = document.getElementById('confirmPayment');
+        const payButton = document.getElementById('payButton');
+        const paymentForm = document.getElementById('paymentForm');
+        const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+        
+        // Enable/disable pay button based on confirmation
+        confirmCheckbox.addEventListener('change', function() {
+            payButton.disabled = !this.checked;
+        });
+        
+        // Show processing modal on form submission
+        paymentForm.addEventListener('submit', function() {
+            processingModal.show();
+        });
+        
+        // Simulate payment processing delay for demo
+        const paymentMethod = document.querySelector('select[name="payment_method"]');
+        paymentMethod.addEventListener('change', function() {
+            const method = this.value;
+            let processingText = 'Processing Payment...';
+            
+            switch(method) {
+                case 'card':
+                    processingText = 'Processing Card Payment...';
+                    break;
+                case 'online':
+                    processingText = 'Connecting to Bank...';
+                    break;
+                case 'mobile':
+                    processingText = 'Processing Mobile Payment...';
+                    break;
+                default:
+                    processingText = 'Processing Cash Payment...';
+            }
+            
+            document.querySelector('#processingModal h5').textContent = processingText;
+        });
+    });
+</script>
+{% endblock %}

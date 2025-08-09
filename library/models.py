@@ -144,9 +144,17 @@ class BookCopy(models.Model):
     ]
     
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    branch = models.ForeignKey(
+        Branch, on_delete=models.CASCADE, null=True, blank=True
+    )
+    section = models.ForeignKey(
+        Section, on_delete=models.CASCADE, null=True, blank=True
+    )
     barcode = models.CharField(max_length=255, unique=True)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
-    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='good')
+    condition = models.CharField(
+        max_length=20, choices=CONDITION_CHOICES, default='good'
+    )
     last_seen = models.DateField(default=timezone.now)
     
     class Meta:

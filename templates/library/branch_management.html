@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Branch Management - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold text-primary mb-0">
+                <i class="fas fa-building me-2"></i>Branch Management
+            </h2>
+            <p class="text-muted">Manage library branches and sections</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+                <i class="fas fa-plus me-1"></i>Add Branch
+            </button>
+            <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#addSectionModal">
+                <i class="fas fa-bookmark me-1"></i>Add Section
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card glass-card h-100">
+                <div class="card-body text-center">
+                    <div class="display-6 text-primary mb-2">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.total_branches }}</h4>
+                    <p class="text-muted mb-0">Total Branches</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card glass-card h-100">
+                <div class="card-body text-center">
+                    <div class="display-6 text-info mb-2">
+                        <i class="fas fa-bookmark"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.total_sections }}</h4>
+                    <p class="text-muted mb-0">Total Sections</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card glass-card h-100">
+                <div class="card-body text-center">
+                    <div class="display-6 text-success mb-2">
+                        <i class="fas fa-books"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.total_books }}</h4>
+                    <p class="text-muted mb-0">Total Books</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card glass-card h-100">
+                <div class="card-body text-center">
+                    <div class="display-6 text-warning mb-2">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.branches_with_books }}</h4>
+                    <p class="text-muted mb-0">Active Branches</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branches List -->
+    <div class="row">
+        {% for branch in branches %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card glass-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-primary">
+                        <i class="fas fa-building me-2"></i>{{ branch.name }}
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'library:branch_detail' branch.pk %}">
+                                    <i class="fas fa-eye me-2"></i>View Details
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'library:set_active_branch' branch.pk %}">
+                                    <i class="fas fa-check me-2"></i>Set Active
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-warning" href="#" onclick="editBranch({{ branch.pk }}, '{{ branch.name }}', '{{ branch.location }}')">
+                                    <i class="fas fa-edit me-2"></i>Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="deleteBranch({{ branch.pk }}, '{{ branch.name }}')">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-map-marker-alt me-2"></i>{{ branch.location }}
+                    </p>
+                    
+                    <!-- Branch Statistics -->
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="border-end">
+                                <div class="h5 text-primary mb-0">{{ branch.total_books }}</div>
+                                <small class="text-muted">Books</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end">
+                                <div class="h5 text-info mb-0">{{ branch.total_sections }}</div>
+                                <small class="text-muted">Sections</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="h5 text-success mb-0">{{ branch.section_set.count }}</div>
+                            <small class="text-muted">Active</small>
+                        </div>
+                    </div>
+
+                    <!-- Sections -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Sections:</h6>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for section in branch.section_set.all %}
+                            <span class="badge bg-light text-dark border">
+                                {{ section.name }}
+                            </span>
+                            {% empty %}
+                            <small class="text-muted">No sections defined</small>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{% url 'library:branch_detail' branch.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card glass-card">
+                <div class="card-body text-center py-5">
+                    <div class="display-1 text-muted mb-3">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h4 class="text-muted">No Branches Found</h4>
+                    <p class="text-muted mb-3">Get started by creating your first library branch.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+                        <i class="fas fa-plus me-1"></i>Add First Branch
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Branch Modal -->
+<div class="modal fade" id="addBranchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-building me-2"></i>Add New Branch
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addBranchForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="branchName" class="form-label">Branch Name</label>
+                        <input type="text" class="form-control" id="branchName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="branchLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="branchLocation" name="location" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add Branch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Section Modal -->
+<div class="modal fade" id="addSectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-bookmark me-2"></i>Add New Section
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addSectionForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sectionBranch" class="form-label">Branch</label>
+                        <select class="form-control" id="sectionBranch" name="branch" required>
+                            <option value="">Select Branch</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.pk }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sectionName" class="form-label">Section Name</label>
+                        <input type="text" class="form-control" id="sectionName" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add Section
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Branch Modal -->
+<div class="modal fade" id="editBranchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Branch
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editBranchForm">
+                {% csrf_token %}
+                <input type="hidden" id="editBranchId" name="id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editBranchName" class="form-label">Branch Name</label>
+                        <input type="text" class="form-control" id="editBranchName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBranchLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="editBranchLocation" name="location" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Update Branch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBranchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the branch <strong id="deleteBranchName"></strong>?</p>
+                <p class="text-warning"><small>This action cannot be undone. All sections and book assignments will be removed.</small></p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash me-1"></i>Delete Branch
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Branch management JavaScript
+let branchToDelete = null;
+
+function editBranch(id, name, location) {
+    document.getElementById('editBranchId').value = id;
+    document.getElementById('editBranchName').value = name;
+    document.getElementById('editBranchLocation').value = location;
+    new bootstrap.Modal(document.getElementById('editBranchModal')).show();
+}
+
+function deleteBranch(id, name) {
+    branchToDelete = id;
+    document.getElementById('deleteBranchName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteBranchModal')).show();
+}
+
+// Form submissions (placeholder - would need actual AJAX implementation)
+document.getElementById('addBranchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Branch management functionality requires AJAX implementation. Coming soon!');
+});
+
+document.getElementById('addSectionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Section management functionality requires AJAX implementation. Coming soon!');
+});
+
+document.getElementById('editBranchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Branch editing functionality requires AJAX implementation. Coming soon!');
+});
+
+document.getElementById('confirmDelete').addEventListener('click', function() {
+    if (branchToDelete) {
+        alert('Branch deletion functionality requires AJAX implementation. Coming soon!');
+        bootstrap.Modal.getInstance(document.getElementById('deleteBranchModal')).hide();
+    }
+});
+</script>
+{% endblock %}

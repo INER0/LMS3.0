@@ -115,49 +115,109 @@
     <!-- Report Filters Modal -->
     <div class="modal fade" id="reportFiltersModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Report Parameters</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-filter me-2"></i>Report Parameters
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="reportForm">
                         <input type="hidden" id="reportType" name="type">
                         
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label class="form-label">Start Date</label>
-                                <input type="date" class="form-control" name="start_date" id="startDate">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">End Date</label>
-                                <input type="date" class="form-control" name="end_date" id="endDate">
+                        <!-- Date Range Section -->
+                        <div class="mb-4">
+                            <h6 class="text-white mb-3">
+                                <i class="fas fa-calendar-alt me-2"></i>Date Range
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label text-light">
+                                        <i class="fas fa-calendar-day me-1"></i>Start Date
+                                    </label>
+                                    <input type="date" class="form-control bg-secondary text-white border-secondary" 
+                                           name="start_date" id="startDate" 
+                                           title="Select the start date for your report">
+                                    <small class="text-muted">Leave empty for all-time data</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-light">
+                                        <i class="fas fa-calendar-check me-1"></i>End Date
+                                    </label>
+                                    <input type="date" class="form-control bg-secondary text-white border-secondary" 
+                                           name="end_date" id="endDate"
+                                           title="Select the end date for your report">
+                                    <small class="text-muted">Leave empty for current date</small>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Branch</label>
-                                <select class="form-select" name="branch" id="branchSelect">
-                                    <option value="">All Branches</option>
-                                    {% for branch in branches %}
-                                        <option value="{{ branch.id }}">{{ branch.name }}</option>
-                                    {% endfor %}
-                                </select>
+                        <!-- Filters Section -->
+                        <div class="mb-4">
+                            <h6 class="text-white mb-3">
+                                <i class="fas fa-sliders-h me-2"></i>Filters & Options
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label text-light">
+                                        <i class="fas fa-building me-1"></i>Branch
+                                    </label>
+                                    <select class="form-select bg-secondary text-white border-secondary" 
+                                            name="branch" id="branchSelect"
+                                            title="Select specific branch or all branches">
+                                        <option value="">📍 All Branches</option>
+                                        {% for branch in branches %}
+                                            <option value="{{ branch.id }}">🏢 {{ branch.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="text-muted">Filter data by specific library branch</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-light">
+                                        <i class="fas fa-download me-1"></i>Export Format
+                                    </label>
+                                    <select class="form-select bg-secondary text-white border-secondary" 
+                                            name="format" id="formatSelect"
+                                            title="Choose how you want to view or export the report">
+                                        <option value="html">🖥️ View in Browser</option>
+                                        <option value="csv">📊 Export as CSV (Excel)</option>
+                                        <option value="pdf">📄 Export as PDF</option>
+                                    </select>
+                                    <small class="text-muted">Select your preferred output format</small>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Export Format</label>
-                                <select class="form-select" name="format" id="formatSelect">
-                                    <option value="html">View in Browser</option>
-                                    <option value="csv">Export as CSV</option>
-                                    <option value="pdf">Export as PDF</option>
-                                </select>
+                        </div>
+                        
+                        <!-- Quick Date Presets -->
+                        <div class="mb-3">
+                            <h6 class="text-white mb-2">
+                                <i class="fas fa-clock me-2"></i>Quick Date Presets
+                            </h6>
+                            <div class="btn-group flex-wrap" role="group">
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateRange('today')">
+                                    Today
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateRange('week')">
+                                    This Week
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateRange('month')">
+                                    This Month
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateRange('quarter')">
+                                    This Quarter
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateRange('year')">
+                                    This Year
+                                </button>
                             </div>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="submitReport()">
                         <i class="fas fa-chart-bar me-1"></i>Generate Report
                     </button>
@@ -185,30 +245,86 @@
         document.getElementById('endDate').value = today.toISOString().split('T')[0];
         
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('reportFiltersModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('reportFiltersModal')).show();
+    }
+    
+    function setDateRange(period) {
+        const today = new Date();
+        let startDate = new Date();
+        
+        switch(period) {
+            case 'today':
+                startDate = new Date(today);
+                break;
+            case 'week':
+                startDate = new Date(today);
+                startDate.setDate(today.getDate() - 7);
+                break;
+            case 'month':
+                startDate = new Date(today);
+                startDate.setMonth(today.getMonth() - 1);
+                break;
+            case 'quarter':
+                startDate = new Date(today);
+                startDate.setMonth(today.getMonth() - 3);
+                break;
+            case 'year':
+                startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 1);
+                break;
+        }
+        
+        document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        
+        // Add visual feedback
+        event.target.classList.add('active');
+        setTimeout(() => {
+            event.target.classList.remove('active');
+        }, 200);
     }
     
     function submitReport() {
+        // Validate required fields
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates.');
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date cannot be after end date.');
+            return;
+        }
+        
+        // Build URL with parameters
         const form = document.getElementById('reportForm');
         const formData = new FormData(form);
-        
-        // Build query string
         const params = new URLSearchParams();
+        
         for (const [key, value] of formData) {
             if (value) params.append(key, value);
         }
         
         // Navigate to detailed report
         const url = `{% url 'library:detailed_report' %}?${params.toString()}`;
-        window.open(url, '_blank');
+        window.location.href = url;
         
         // Close modal
         bootstrap.Modal.getInstance(document.getElementById('reportFiltersModal')).hide();
     }
     
-    // Set minimum and maximum dates
+    // Initialize tooltips and set date constraints
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Set date constraints
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').max = today;
         document.getElementById('endDate').max = today;

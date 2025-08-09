@@ -258,7 +258,7 @@ def manager_dashboard(request):
         )['amount__sum'] or 0,
         'monthly_fine_revenue': Payment.objects.filter(
             payment_date__gte=month_ago,
-            payment_type='fine_payment'
+            purpose='fine'
         ).aggregate(Sum('amount'))['amount__sum'] or 0,
 
         # Top stats
@@ -388,10 +388,10 @@ def _generate_revenue_report(request):
     return {
         'total_revenue': payments.aggregate(Sum('amount'))['amount__sum'] or 0,
         'fine_revenue': payments.filter(
-            payment_type='fine_payment'
+            purpose='fine'
         ).aggregate(Sum('amount'))['amount__sum'] or 0,
         'membership_revenue': payments.filter(
-            payment_type='membership_fee'
+            purpose='membership'
         ).aggregate(Sum('amount'))['amount__sum'] or 0,
     }
 

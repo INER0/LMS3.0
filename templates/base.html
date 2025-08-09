@@ -320,8 +320,8 @@
                         {% endif %}
                         
                         <!-- Manager Menu -->
-                        <!-- DEBUG: user={{ user.username }}, auth={{ user.is_authenticated }}, role={{ user|has_role:"Manager" }} -->
-                        {% if user.is_authenticated and user|has_role:"Manager" %}
+                        <!-- DEBUG: user={{ user.username }}, auth={{ user.is_authenticated }}, role={{ user|has_role:"manager" }} -->
+                        {% if user.is_authenticated and user|has_role:"manager" %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-user-tie me-1"></i>Manager

@@ -66,7 +66,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True)
     address = models.TextField(blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    national_id = models.CharField(max_length=20, blank=True, unique=True)
+    national_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     
     # Security fields
     failed_login_attempts = models.IntegerField(default=0)
@@ -80,6 +80,12 @@ class User(AbstractUser):
     
     def __str__(self):
         return f"{self.username} ({self.email})"
+    
+    def save(self, *args, **kwargs):
+        """Override save to handle empty national_id as NULL"""
+        if self.national_id == '':
+            self.national_id = None
+        super().save(*args, **kwargs)
     
     def is_account_locked(self):
         """Check if account is currently locked"""

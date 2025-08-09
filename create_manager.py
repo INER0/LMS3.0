@@ -22,7 +22,7 @@ def create_manager_user():
     try:
         # Get or create the Manager role
         manager_role, created = Role.objects.get_or_create(
-            name='Manager',
+            name='manager',
             defaults={
                 'description': 'Library manager with full access to staff functions'
             }

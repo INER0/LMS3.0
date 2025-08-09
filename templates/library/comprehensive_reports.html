@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Comprehensive Reports - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    .report-card:hover {
+        transform: translateY(-5px);
+    }
+    .report-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="text-white mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Comprehensive Reports & Analytics
+                    </h2>
+                    <div>
+                        <a href="{% url 'library:manager_dashboard' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                <p class="text-white-50 mb-0 mt-2">Generate detailed reports on book lending, overdue books, and revenue from fines.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-calendar-month text-info fa-2x mb-2"></i>
+                <h4 class="text-white">{{ quick_stats.monthly_loans }}</h4>
+                <small class="text-light">Monthly Loans</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-calendar-year text-success fa-2x mb-2"></i>
+                <h4 class="text-white">{{ quick_stats.yearly_loans }}</h4>
+                <small class="text-light">Yearly Loans</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-money-bill-wave text-warning fa-2x mb-2"></i>
+                <h4 class="text-white">{{ quick_stats.monthly_revenue }} MVR</h4>
+                <small class="text-light">Monthly Revenue</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-3 text-center">
+                <i class="fas fa-chart-line text-danger fa-2x mb-2"></i>
+                <h4 class="text-white">{{ quick_stats.yearly_revenue }} MVR</h4>
+                <small class="text-light">Yearly Revenue</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Types -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-4">Available Reports</h4>
+                
+                <div class="row">
+                    {% for report in report_types %}
+                        <div class="col-md-4 col-lg-3 mb-4">
+                            <div class="card report-card h-100" onclick="generateReport('{{ report.id }}')">
+                                <div class="card-body text-center">
+                                    <i class="fas {{ report.icon }} report-icon text-primary"></i>
+                                    <h5 class="card-title">{{ report.name }}</h5>
+                                    <p class="card-text small text-muted">
+                                        {% if report.id == 'loans' %}
+                                            Detailed analysis of book lending patterns and statistics
+                                        {% elif report.id == 'overdue' %}
+                                            Track overdue books and borrower behavior
+                                        {% elif report.id == 'fines' %}
+                                            Revenue analysis from library fines and penalties
+                                        {% elif report.id == 'members' %}
+                                            Member registration and activity statistics
+                                        {% elif report.id == 'inventory' %}
+                                            Book inventory and availability analysis
+                                        {% elif report.id == 'staff' %}
+                                            Staff performance and productivity metrics
+                                        {% endif %}
+                                    </p>
+                                    <button class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-bar me-1"></i>Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Filters Modal -->
+    <div class="modal fade" id="reportFiltersModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Report Parameters</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportForm">
+                        <input type="hidden" id="reportType" name="type">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="start_date" id="startDate">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-control" name="end_date" id="endDate">
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Branch</label>
+                                <select class="form-select" name="branch" id="branchSelect">
+                                    <option value="">All Branches</option>
+                                    {% for branch in branches %}
+                                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Export Format</label>
+                                <select class="form-select" name="format" id="formatSelect">
+                                    <option value="html">View in Browser</option>
+                                    <option value="csv">Export as CSV</option>
+                                    <option value="pdf">Export as PDF</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitReport()">
+                        <i class="fas fa-chart-bar me-1"></i>Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedReportType = '';
+    
+    function generateReport(reportType) {
+        selectedReportType = reportType;
+        document.getElementById('reportType').value = reportType;
+        
+        // Set default date range (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('reportFiltersModal'));
+        modal.show();
+    }
+    
+    function submitReport() {
+        const form = document.getElementById('reportForm');
+        const formData = new FormData(form);
+        
+        // Build query string
+        const params = new URLSearchParams();
+        for (const [key, value] of formData) {
+            if (value) params.append(key, value);
+        }
+        
+        // Navigate to detailed report
+        const url = `{% url 'library:detailed_report' %}?${params.toString()}`;
+        window.open(url, '_blank');
+        
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('reportFiltersModal')).hide();
+    }
+    
+    // Set minimum and maximum dates
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').max = today;
+        document.getElementById('endDate').max = today;
+    });
+</script>
+{% endblock %}

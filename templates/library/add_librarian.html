@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Add Librarian - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="text-white mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Add New Librarian
+                    </h2>
+                    <div>
+                        <a href="{% url 'library:staff_management' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Staff
+                        </a>
+                    </div>
+                </div>
+                <p class="text-white-50 mb-0 mt-2">Create a new librarian account with proper access permissions.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Librarian Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-4">Librarian Account Information</h4>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label text-white">First Name *</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required
+                                   placeholder="Enter first name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label text-white">Last Name *</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required
+                                   placeholder="Enter last name">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label text-white">Username *</label>
+                        <input type="text" class="form-control" id="username" name="username" required
+                               placeholder="Enter unique username">
+                        <div class="form-text text-white-50">Must be unique across the system</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label text-white">Email Address *</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="librarian@library.com">
+                        <div class="form-text text-white-50">Will be used for system notifications</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label text-white">Password *</label>
+                        <input type="password" class="form-control" id="password" name="password" required
+                               minlength="8" placeholder="Enter secure password">
+                        <div class="form-text text-white-50">Minimum 8 characters required</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label text-white">Confirm Password *</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required
+                               minlength="8" placeholder="Re-enter password">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="branch" class="form-label text-white">Assigned Branch</label>
+                        <select class="form-select" id="branch" name="branch">
+                            <option value="">No specific branch assignment</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.id }}">{{ branch.name }} - {{ branch.location }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-white-50">Optionally assign to a specific branch</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-key me-1"></i>Librarian Permissions
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li>Manage book inventory (add, edit, delete books)</li>
+                                    <li>Process book loans and returns</li>
+                                    <li>Approve member reservations</li>
+                                    <li>Manage member fines and payments</li>
+                                    <li>View loan and fine management dashboards</li>
+                                    <li>Access staff dashboard and tools</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'library:staff_management' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus me-1"></i>Create Librarian Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Notice -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8 col-lg-6">
+            <div class="glass-card p-3">
+                <h6 class="text-warning mb-2">
+                    <i class="fas fa-shield-alt me-1"></i>Security Notice
+                </h6>
+                <ul class="text-white-50 small mb-0">
+                    <li>Librarian accounts have elevated privileges - create responsibly</li>
+                    <li>Ensure strong passwords are used for all staff accounts</li>
+                    <li>Regular password changes should be encouraged</li>
+                    <li>Monitor staff activity through audit logs</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-focus on first name field
+        document.getElementById('first_name').focus();
+        
+        // Password confirmation validation
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        
+        function validatePasswordMatch() {
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        }
+        
+        password.addEventListener('change', validatePasswordMatch);
+        confirmPassword.addEventListener('keyup', validatePasswordMatch);
+        
+        // Form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const requiredFields = ['first_name', 'last_name', 'username', 'email', 'password'];
+            let isValid = true;
+            
+            requiredFields.forEach(fieldName => {
+                const field = document.getElementById(fieldName);
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (password.value !== confirmPassword.value) {
+                isValid = false;
+                confirmPassword.classList.add('is-invalid');
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+                alert('Please fill in all required fields correctly.');
+            }
+        });
+        
+        // Generate username from name
+        const firstName = document.getElementById('first_name');
+        const lastName = document.getElementById('last_name');
+        const username = document.getElementById('username');
+        
+        function generateUsername() {
+            if (firstName.value && lastName.value && !username.value) {
+                const suggested = (firstName.value.toLowerCase() + '.' + lastName.value.toLowerCase())
+                    .replace(/[^a-z.]/g, '');
+                username.placeholder = `Suggested: ${suggested}`;
+            }
+        }
+        
+        firstName.addEventListener('blur', generateUsername);
+        lastName.addEventListener('blur', generateUsername);
+    });
+</script>
+{% endblock %}

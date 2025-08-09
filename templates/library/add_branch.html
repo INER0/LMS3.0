@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Add Branch - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="text-white mb-0">
+                        <i class="fas fa-plus me-2"></i>Add New Branch
+                    </h2>
+                    <div>
+                        <a href="{% url 'library:manager_branch_management' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Branches
+                        </a>
+                    </div>
+                </div>
+                <p class="text-white-50 mb-0 mt-2">Create a new library branch location.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Branch Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-4">Branch Information</h4>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-white">Branch Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               placeholder="e.g. Main Library, Downtown Branch">
+                        <div class="form-text text-white-50">Enter a unique name for this branch</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label text-white">Location *</label>
+                        <textarea class="form-control" id="location" name="location" rows="3" required
+                                  placeholder="Full address including city, state/province"></textarea>
+                        <div class="form-text text-white-50">Enter the complete address for this branch</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label text-white">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Optional description of the branch"></textarea>
+                        <div class="form-text text-white-50">Brief description of the branch (optional)</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'library:manager_branch_management' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>Create Branch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Section -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8 col-lg-6">
+            <div class="glass-card p-3">
+                <h6 class="text-white mb-2">
+                    <i class="fas fa-info-circle me-1"></i>Branch Setup Guide
+                </h6>
+                <ul class="text-white-50 small mb-0">
+                    <li>Branch names should be unique and descriptive</li>
+                    <li>Include complete address information for location</li>
+                    <li>After creating the branch, you can add sections and assign book copies</li>
+                    <li>Librarian accounts can be assigned to specific branches</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-focus on branch name field
+        document.getElementById('name').focus();
+        
+        // Form validation feedback
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const name = document.getElementById('name').value.trim();
+            const location = document.getElementById('location').value.trim();
+            
+            if (!name || !location) {
+                event.preventDefault();
+                alert('Please fill in all required fields.');
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -180,5 +180,29 @@
       "rate_per_day": "0.00",
       "processing_fee": "25.00"
     }
+  },
+  {
+    "model": "authentication.user",
+    "pk": 1,
+    "fields": {
+      "username": "manager",
+      "password": "pbkdf2_sha256$600000$8HqXzKZF5L0vN9Rz2J4Y8G$8n+KqH5L0vN9Rz2J4Y8G5N7P1Rm6Tq3Ws9Xz5Cv8Db=",
+      "email": "manager@lms.com",
+      "first_name": "Library",
+      "last_name": "Manager",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "date_joined": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "authentication.userrole",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "role": 3,
+      "assigned_at": "2025-01-01T00:00:00Z"
+    }
   }
 ]

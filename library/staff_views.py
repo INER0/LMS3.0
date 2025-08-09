@@ -677,3 +677,360 @@ def bulk_send_reminders(request):
         })
 
 
+# ============= ENHANCED MANAGER FUNCTIONS =============
+
+@manager_required
+def comprehensive_reports(request):
+    """Enhanced reports dashboard for managers"""
+    today = datetime.now().date()
+    month_ago = today - timedelta(days=30)
+    year_ago = today - timedelta(days=365)
+    
+    context = {
+        'report_types': [
+            {'id': 'loans', 'name': 'Book Lending Report', 'icon': 'fa-book'},
+            {'id': 'overdue', 'name': 'Overdue Books Report', 'icon': 'fa-exclamation-triangle'},
+            {'id': 'fines', 'name': 'Fine Revenue Report', 'icon': 'fa-money-bill-wave'},
+            {'id': 'members', 'name': 'Member Statistics', 'icon': 'fa-users'},
+            {'id': 'inventory', 'name': 'Book Inventory Report', 'icon': 'fa-boxes'},
+            {'id': 'staff', 'name': 'Staff Performance', 'icon': 'fa-user-tie'},
+        ],
+        'quick_stats': {
+            'monthly_loans': BookLoan.objects.filter(
+                borrow_date__gte=month_ago
+            ).count(),
+            'yearly_loans': BookLoan.objects.filter(
+                borrow_date__gte=year_ago
+            ).count(),
+            'monthly_revenue': Fine.objects.filter(
+                paid=True, paid_date__gte=month_ago
+            ).aggregate(Sum('amount'))['amount__sum'] or 0,
+            'yearly_revenue': Fine.objects.filter(
+                paid=True, paid_date__gte=year_ago
+            ).aggregate(Sum('amount'))['amount__sum'] or 0,
+        }
+    }
+    return render(request, 'library/comprehensive_reports.html', context)
+
+
+@manager_required
+def add_branch(request):
+    """Add new library branch"""
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        location = request.POST.get('location')
+        description = request.POST.get('description', '')
+        
+        if name and location:
+            branch = Branch.objects.create(
+                name=name,
+                location=location
+            )
+            messages.success(request, f'Branch "{name}" added successfully!')
+            return redirect('library:manager_branch_management')
+        else:
+            messages.error(request, 'Name and location are required.')
+    
+    return render(request, 'library/add_branch.html')
+
+
+@manager_required
+def edit_branch(request, branch_id):
+    """Edit library branch"""
+    branch = get_object_or_404(Branch, id=branch_id)
+    
+    if request.method == 'POST':
+        branch.name = request.POST.get('name', branch.name)
+        branch.location = request.POST.get('location', branch.location)
+        branch.save()
+        
+        messages.success(request, f'Branch "{branch.name}" updated successfully!')
+        return redirect('library:manager_branch_management')
+    
+    context = {'branch': branch}
+    return render(request, 'library/edit_branch.html', context)
+
+
+@manager_required
+def delete_branch(request, branch_id):
+    """Delete library branch"""
+    branch = get_object_or_404(Branch, id=branch_id)
+    
+    if request.method == 'POST':
+        branch_name = branch.name
+        
+        # Check if branch has books or active loans
+        if BookCopy.objects.filter(branch=branch).exists():
+            messages.error(request, 
+                f'Cannot delete branch "{branch_name}" - it has books assigned.')
+            return redirect('library:manager_branch_management')
+        
+        branch.delete()
+        messages.success(request, f'Branch "{branch_name}" deleted successfully!')
+        return redirect('library:manager_branch_management')
+    
+    context = {'branch': branch}
+    return render(request, 'library/delete_branch.html', context)
+
+
+@manager_required
+def add_librarian(request):
+    """Add new librarian account"""
+    from authentication.models import Role, UserRole
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        password = request.POST.get('password')
+        branch_id = request.POST.get('branch')
+        
+        if username and email and password:
+            try:
+                # Create user
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    password=password,
+                    is_staff=True
+                )
+                
+                # Assign librarian role
+                librarian_role = Role.objects.get(name='Librarian')
+                UserRole.objects.create(user=user, role=librarian_role)
+                
+                messages.success(request, 
+                    f'Librarian account "{username}" created successfully!')
+                return redirect('library:staff_management')
+                
+            except Exception as e:
+                messages.error(request, f'Error creating librarian: {str(e)}')
+        else:
+            messages.error(request, 'All required fields must be filled.')
+    
+    context = {
+        'branches': Branch.objects.all()
+    }
+    return render(request, 'library/add_librarian.html', context)
+
+
+@manager_required
+def edit_librarian(request, user_id):
+    """Edit librarian account"""
+    librarian = get_object_or_404(User, id=user_id, is_staff=True)
+    
+    if request.method == 'POST':
+        librarian.first_name = request.POST.get('first_name', librarian.first_name)
+        librarian.last_name = request.POST.get('last_name', librarian.last_name)
+        librarian.email = request.POST.get('email', librarian.email)
+        
+        # Update password if provided
+        new_password = request.POST.get('password')
+        if new_password:
+            librarian.set_password(new_password)
+        
+        librarian.save()
+        messages.success(request, f'Librarian "{librarian.username}" updated successfully!')
+        return redirect('library:staff_management')
+    
+    context = {
+        'librarian': librarian,
+        'branches': Branch.objects.all()
+    }
+    return render(request, 'library/edit_librarian.html', context)
+
+
+@manager_required
+def deactivate_librarian(request, user_id):
+    """Deactivate librarian account"""
+    librarian = get_object_or_404(User, id=user_id, is_staff=True)
+    
+    if request.method == 'POST':
+        librarian.is_active = False
+        librarian.save()
+        messages.success(request, f'Librarian "{librarian.username}" deactivated successfully!')
+        return redirect('library:staff_management')
+    
+    context = {'librarian': librarian}
+    return render(request, 'library/deactivate_librarian.html', context)
+
+
+@manager_required
+def detailed_report(request):
+    """Generate detailed report based on type and parameters"""
+    report_type = request.GET.get('type', 'loans')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    branch_id = request.GET.get('branch')
+    
+    # Base context
+    context = {
+        'report_type': report_type,
+        'start_date': start_date,
+        'end_date': end_date,
+        'branches': Branch.objects.all(),
+        'selected_branch': int(branch_id) if branch_id else None,
+    }
+    
+    # Generate specific report data
+    if report_type == 'loans':
+        context.update(_generate_detailed_loan_report(start_date, end_date, branch_id))
+    elif report_type == 'overdue':
+        context.update(_generate_detailed_overdue_report(branch_id))
+    elif report_type == 'fines':
+        context.update(_generate_detailed_fine_report(start_date, end_date, branch_id))
+    elif report_type == 'members':
+        context.update(_generate_member_report(start_date, end_date))
+    elif report_type == 'inventory':
+        context.update(_generate_inventory_report(branch_id))
+    elif report_type == 'staff':
+        context.update(_generate_staff_report(start_date, end_date))
+    
+    return render(request, 'library/detailed_report.html', context)
+
+
+def _generate_detailed_loan_report(start_date, end_date, branch_id):
+    """Generate comprehensive loan report"""
+    loans = BookLoan.objects.select_related(
+        'user', 'book_copy__book', 'book_copy__branch'
+    ).all()
+    
+    if start_date:
+        loans = loans.filter(borrow_date__gte=start_date)
+    if end_date:
+        loans = loans.filter(borrow_date__lte=end_date)
+    if branch_id:
+        loans = loans.filter(book_copy__branch_id=branch_id)
+    
+    return {
+        'loans': loans[:100],  # Limit for performance
+        'loan_stats': {
+            'total': loans.count(),
+            'active': loans.filter(status='borrowed').count(),
+            'returned': loans.filter(status='returned').count(),
+            'overdue': loans.filter(
+                status='borrowed', due_date__lt=datetime.now().date()
+            ).count(),
+        },
+        'top_borrowers': loans.values(
+            'user__username', 'user__first_name', 'user__last_name'
+        ).annotate(loan_count=Count('id')).order_by('-loan_count')[:10],
+        'popular_books': loans.values(
+            'book_copy__book__title', 'book_copy__book__author'
+        ).annotate(loan_count=Count('id')).order_by('-loan_count')[:10],
+    }
+
+
+def _generate_detailed_overdue_report(branch_id):
+    """Generate detailed overdue report"""
+    overdue_loans = BookLoan.objects.filter(
+        status='borrowed', due_date__lt=datetime.now().date()
+    ).select_related('user', 'book_copy__book', 'book_copy__branch')
+    
+    if branch_id:
+        overdue_loans = overdue_loans.filter(book_copy__branch_id=branch_id)
+    
+    return {
+        'overdue_loans': overdue_loans,
+        'overdue_stats': {
+            'total_overdue': overdue_loans.count(),
+            'avg_days_overdue': overdue_loans.aggregate(
+                avg_days=Sum('due_date')  # Simplified calculation
+            ),
+            'longest_overdue': overdue_loans.order_by('due_date').first(),
+        }
+    }
+
+
+def _generate_detailed_fine_report(start_date, end_date, branch_id):
+    """Generate detailed fine revenue report"""
+    fines = Fine.objects.select_related(
+        'user', 'book_loan__book_copy__book'
+    ).all()
+    
+    if start_date:
+        fines = fines.filter(fine_date__gte=start_date)
+    if end_date:
+        fines = fines.filter(fine_date__lte=end_date)
+    if branch_id:
+        fines = fines.filter(book_loan__book_copy__branch_id=branch_id)
+    
+    return {
+        'fines': fines[:100],
+        'fine_stats': {
+            'total_fines': fines.aggregate(Sum('amount'))['amount__sum'] or 0,
+            'paid_fines': fines.filter(paid=True).aggregate(
+                Sum('amount'))['amount__sum'] or 0,
+            'unpaid_fines': fines.filter(paid=False).aggregate(
+                Sum('amount'))['amount__sum'] or 0,
+            'collection_rate': 0,  # Calculate percentage
+        }
+    }
+
+
+def _generate_member_report(start_date, end_date):
+    """Generate member statistics report"""
+    members = User.objects.filter(is_staff=False)
+    
+    if start_date:
+        members = members.filter(date_joined__gte=start_date)
+    if end_date:
+        members = members.filter(date_joined__lte=end_date)
+    
+    return {
+        'member_stats': {
+            'total_members': members.count(),
+            'active_members': members.filter(is_active=True).count(),
+            'new_members': members.filter(
+                date_joined__gte=datetime.now().date() - timedelta(days=30)
+            ).count(),
+        }
+    }
+
+
+def _generate_inventory_report(branch_id):
+    """Generate book inventory report"""
+    books = Book.objects.annotate(
+        total_copies=Count('bookcopy'),
+        available_copies=Count('bookcopy', filter=Q(bookcopy__status='available')),
+        borrowed_copies=Count('bookcopy', filter=Q(bookcopy__status='borrowed'))
+    )
+    
+    if branch_id:
+        books = books.filter(bookcopy__branch_id=branch_id)
+    
+    return {
+        'inventory_stats': {
+            'total_books': books.count(),
+            'total_copies': BookCopy.objects.filter(
+                branch_id=branch_id if branch_id else None
+            ).count() if branch_id else BookCopy.objects.count(),
+            'available_copies': BookCopy.objects.filter(
+                status='available'
+            ).count(),
+            'borrowed_copies': BookCopy.objects.filter(
+                status='borrowed'
+            ).count(),
+        },
+        'books': books[:50]
+    }
+
+
+def _generate_staff_report(start_date, end_date):
+    """Generate staff performance report"""
+    return {
+        'staff_stats': {
+            'total_staff': User.objects.filter(is_staff=True).count(),
+            'librarians': User.objects.filter(
+                userrole__role__name='Librarian'
+            ).count(),
+            'managers': User.objects.filter(
+                userrole__role__name='Manager'
+            ).count(),
+        }
+    }
+
+

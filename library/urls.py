@@ -76,4 +76,25 @@ urlpatterns = [
          name='staff_management'),
     path('manager/reports/', staff_views.generate_report,
          name='generate_report'),
+    
+    # Enhanced Manager Functions
+    path('manager/reports/comprehensive/', staff_views.comprehensive_reports,
+         name='comprehensive_reports'),
+    path('manager/reports/detailed/', staff_views.detailed_report,
+         name='detailed_report'),
+    
+    # Branch Management
+    path('manager/branches/add/', staff_views.add_branch, name='add_branch'),
+    path('manager/branches/<int:branch_id>/edit/', staff_views.edit_branch,
+         name='edit_branch'),
+    path('manager/branches/<int:branch_id>/delete/', staff_views.delete_branch,
+         name='delete_branch'),
+    
+    # Librarian Management  
+    path('manager/librarians/add/', staff_views.add_librarian,
+         name='add_librarian'),
+    path('manager/librarians/<int:user_id>/edit/', staff_views.edit_librarian,
+         name='edit_librarian'),
+    path('manager/librarians/<int:user_id>/deactivate/',
+         staff_views.deactivate_librarian, name='deactivate_librarian'),
 ]

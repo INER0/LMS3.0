@@ -1,3 +1,4 @@
+{% load auth_extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -319,7 +320,8 @@
                         {% endif %}
                         
                         <!-- Manager Menu -->
-                        {% if user.is_superuser %}
+                        <!-- DEBUG: user={{ user.username }}, auth={{ user.is_authenticated }}, role={{ user|has_role:"Manager" }} -->
+                        {% if user.is_authenticated and user|has_role:"Manager" %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-user-tie me-1"></i>Manager
@@ -328,11 +330,16 @@
                                     <li><a class="dropdown-item" href="{% url 'library:manager_dashboard' %}">
                                         <i class="fas fa-chart-line me-2"></i>Manager Dashboard
                                     </a></li>
-                                    <li><a class="dropdown-item" href="{% url 'library:generate_report' %}">
-                                        <i class="fas fa-chart-bar me-2"></i>Reports
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:comprehensive_reports' %}">
+                                        <i class="fas fa-chart-bar me-2"></i>Comprehensive Reports
                                     </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'library:generate_report' %}">
+                                        <i class="fas fa-file-alt me-2"></i>Quick Reports
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{% url 'library:staff_management' %}">
-                                        <i class="fas fa-users me-2"></i>Staff Management
+                                        <i class="fas fa-users me-2"></i>Librarian Management
                                     </a></li>
                                     <li><a class="dropdown-item" href="{% url 'library:manager_branch_management' %}">
                                         <i class="fas fa-building me-2"></i>Branch Management

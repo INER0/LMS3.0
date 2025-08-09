@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Detailed Report - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-section {
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        border-left: 4px solid #007bff;
+        background: rgba(255, 255, 255, 0.1);
+    }
+    .export-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-white mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            {% if report_type == 'loans' %}Book Lending Report
+                            {% elif report_type == 'overdue' %}Overdue Books Report
+                            {% elif report_type == 'fines' %}Fine Revenue Report
+                            {% elif report_type == 'members' %}Member Statistics Report
+                            {% elif report_type == 'inventory' %}Book Inventory Report
+                            {% elif report_type == 'staff' %}Staff Performance Report
+                            {% endif %}
+                        </h2>
+                        <p class="text-white-50 mb-0 mt-1">
+                            {% if start_date and end_date %}
+                                Period: {{ start_date }} to {{ end_date }}
+                            {% elif start_date %}
+                                From: {{ start_date }}
+                            {% elif end_date %}
+                                Until: {{ end_date }}
+                            {% else %}
+                                All time data
+                            {% endif %}
+                            {% if selected_branch %}
+                                | Branch: {{ branches|get_item:selected_branch.name }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm me-2" onclick="exportReport('csv')">
+                            <i class="fas fa-file-csv me-1"></i>Export CSV
+                        </button>
+                        <button class="btn btn-info btn-sm me-2" onclick="exportReport('pdf')">
+                            <i class="fas fa-file-pdf me-1"></i>Export PDF
+                        </button>
+                        <a href="{% url 'library:comprehensive_reports' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Content -->
+    {% if report_type == 'loans' %}
+        <!-- Loan Statistics -->
+        <div class="report-section">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-white">{{ loan_stats.total }}</h4>
+                        <p class="text-white-50 mb-0">Total Loans</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-success">{{ loan_stats.active }}</h4>
+                        <p class="text-white-50 mb-0">Active Loans</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-info">{{ loan_stats.returned }}</h4>
+                        <p class="text-white-50 mb-0">Returned</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-danger">{{ loan_stats.overdue }}</h4>
+                        <p class="text-white-50 mb-0">Overdue</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Borrowers -->
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-white mb-3">Top Borrowers</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Member</th>
+                                <th>Loans</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrower in top_borrowers %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ borrower.user__first_name }} {{ borrower.user__last_name }} ({{ borrower.user__username }})</td>
+                                    <td><span class="badge bg-primary">{{ borrower.loan_count }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Popular Books -->
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-white mb-3">Most Popular Books</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Times Borrowed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for book in popular_books %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ book.book_copy__book__title }}</td>
+                                    <td>{{ book.book_copy__book__author }}</td>
+                                    <td><span class="badge bg-success">{{ book.loan_count }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    {% elif report_type == 'overdue' %}
+        <!-- Overdue Statistics -->
+        <div class="report-section">
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-danger">{{ overdue_stats.total_overdue }}</h4>
+                        <p class="text-white-50 mb-0">Total Overdue Books</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overdue Books List -->
+            <div class="glass-card p-4">
+                <h5 class="text-white mb-3">Overdue Books</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrower</th>
+                                <th>Due Date</th>
+                                <th>Days Overdue</th>
+                                <th>Fine Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in overdue_loans %}
+                                <tr>
+                                    <td>{{ loan.book_copy.book.title }}</td>
+                                    <td>{{ loan.user.get_full_name|default:loan.user.username }}</td>
+                                    <td>{{ loan.due_date }}</td>
+                                    <td>
+                                        {% with days_overdue=loan.due_date|timesince %}
+                                            <span class="badge bg-danger">{{ days_overdue }}</span>
+                                        {% endwith %}
+                                    </td>
+                                    <td>{{ loan.fine_amount|default:"0" }} MVR</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    {% elif report_type == 'fines' %}
+        <!-- Fine Statistics -->
+        <div class="report-section">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-warning">{{ fine_stats.total_fines }} MVR</h4>
+                        <p class="text-white-50 mb-0">Total Fines</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-success">{{ fine_stats.paid_fines }} MVR</h4>
+                        <p class="text-white-50 mb-0">Collected</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-danger">{{ fine_stats.unpaid_fines }} MVR</h4>
+                        <p class="text-white-50 mb-0">Outstanding</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-info">{{ fine_stats.collection_rate }}%</h4>
+                        <p class="text-white-50 mb-0">Collection Rate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% elif report_type == 'inventory' %}
+        <!-- Inventory Statistics -->
+        <div class="report-section">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-primary">{{ inventory_stats.total_books }}</h4>
+                        <p class="text-white-50 mb-0">Total Books</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-info">{{ inventory_stats.total_copies }}</h4>
+                        <p class="text-white-50 mb-0">Total Copies</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-success">{{ inventory_stats.available_copies }}</h4>
+                        <p class="text-white-50 mb-0">Available</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stat-card p-3">
+                        <h4 class="text-warning">{{ inventory_stats.borrowed_copies }}</h4>
+                        <p class="text-white-50 mb-0">Borrowed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function exportReport(format) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('format', format);
+        
+        const exportUrl = `{% url 'library:generate_report' %}?${urlParams.toString()}`;
+        window.open(exportUrl, '_blank');
+    }
+
+    // Print functionality
+    function printReport() {
+        window.print();
+    }
+</script>
+{% endblock %}

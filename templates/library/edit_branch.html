@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Edit Branch - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="text-white mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Branch: {{ branch.name }}
+                    </h2>
+                    <div>
+                        <a href="{% url 'library:manager_branch_management' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Branches
+                        </a>
+                    </div>
+                </div>
+                <p class="text-white-50 mb-0 mt-2">Update branch information and settings.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Branch Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-4">Branch Information</h4>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-white">Branch Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ branch.name }}" required>
+                        <div class="form-text text-white-50">Update the branch name</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="location" class="form-label text-white">Location *</label>
+                        <textarea class="form-control" id="location" name="location" rows="3" required>{{ branch.location }}</textarea>
+                        <div class="form-text text-white-50">Update the complete address</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'library:manager_branch_management' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Branch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-focus on branch name field
+        document.getElementById('name').focus();
+        document.getElementById('name').select();
+    });
+</script>
+{% endblock %}

@@ -25,6 +25,23 @@ def user_has_permission(user, permission_name):
     return utils_has_permission(user, permission_name)
 
 
+@register.filter
+def get_item(dictionary, key):
+    """Get an item from a dictionary by key"""
+    if isinstance(dictionary, dict):
+        return dictionary.get(key)
+    return None
+
+
+@register.filter
+def mul(value, arg):
+    """Multiply the value by the argument"""
+    try:
+        return int(value) * int(arg)
+    except (ValueError, TypeError):
+        return 0
+
+
 @register.simple_tag
 def is_librarian(user):
     """Check if user is a librarian"""

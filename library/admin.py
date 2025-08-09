@@ -56,7 +56,7 @@ class BookAuthorInline(admin.TabularInline):
 class BookAdmin(admin.ModelAdmin):
     list_display = ['title', 'isbn', 'category', 'publication_year', 'publisher', 'section']
     list_filter = ['category', 'language', 'publication_year', 'section__branch']
-    search_fields = ['title', 'isbn', 'authors__name']
+    search_fields = ['title', 'isbn', 'bookauthor__author__name']
     ordering = ['title']
     inlines = [BookAuthorInline]
     

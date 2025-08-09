@@ -68,7 +68,7 @@ class BookManagementView(ListView):
             queryset = queryset.filter(
                 Q(title__icontains=search) |
                 Q(isbn__icontains=search) |
-                Q(authors__name__icontains=search)
+                Q(bookauthor__author__name__icontains=search)
             ).distinct()
 
         # Filter by category
@@ -691,9 +691,7 @@ def comprehensive_reports(request):
             {'id': 'loans', 'name': 'Book Lending Report', 'icon': 'fa-book'},
             {'id': 'overdue', 'name': 'Overdue Books Report', 'icon': 'fa-exclamation-triangle'},
             {'id': 'fines', 'name': 'Fine Revenue Report', 'icon': 'fa-money-bill-wave'},
-            {'id': 'members', 'name': 'Member Statistics', 'icon': 'fa-users'},
             {'id': 'inventory', 'name': 'Book Inventory Report', 'icon': 'fa-boxes'},
-            {'id': 'staff', 'name': 'Staff Performance', 'icon': 'fa-user-tie'},
         ],
         'quick_stats': {
             'monthly_loans': BookLoan.objects.filter(
@@ -919,7 +917,7 @@ def _generate_detailed_loan_report(start_date, end_date, branch_id):
             'user__username', 'user__first_name', 'user__last_name'
         ).annotate(loan_count=Count('id')).order_by('-loan_count')[:10],
         'popular_books': loans.values(
-            'book_copy__book__title', 'book_copy__book__author'
+            'book_copy__book__title', 'book_copy__book__isbn'
         ).annotate(loan_count=Count('id')).order_by('-loan_count')[:10],
     }
 
@@ -933,13 +931,23 @@ def _generate_detailed_overdue_report(branch_id):
     if branch_id:
         overdue_loans = overdue_loans.filter(book_copy__branch_id=branch_id)
     
+    # Calculate average days overdue in Python to avoid SQLite date aggregation issues
+    total_days_overdue = 0
+    overdue_count = 0
+    today = datetime.now().date()
+    
+    for loan in overdue_loans:
+        days_overdue = (today - loan.due_date).days
+        total_days_overdue += days_overdue
+        overdue_count += 1
+    
+    avg_days_overdue = total_days_overdue / overdue_count if overdue_count > 0 else 0
+    
     return {
         'overdue_loans': overdue_loans,
         'overdue_stats': {
             'total_overdue': overdue_loans.count(),
-            'avg_days_overdue': overdue_loans.aggregate(
-                avg_days=Sum('due_date')  # Simplified calculation
-            ),
+            'avg_days_overdue': round(avg_days_overdue, 1),
             'longest_overdue': overdue_loans.order_by('due_date').first(),
         }
     }
@@ -995,25 +1003,50 @@ def _generate_inventory_report(branch_id):
     """Generate book inventory report"""
     books = Book.objects.annotate(
         total_copies=Count('bookcopy'),
-        available_copies=Count('bookcopy', filter=Q(bookcopy__status='available')),
-        borrowed_copies=Count('bookcopy', filter=Q(bookcopy__status='borrowed'))
+        available_copies=Count(
+            'bookcopy', 
+            filter=Q(bookcopy__condition='good') & 
+                  ~Q(bookcopy__bookloan__status='borrowed')
+        ),
+        borrowed_copies=Count(
+            'bookcopy',
+            filter=Q(bookcopy__bookloan__status='borrowed')
+        )
     )
     
     if branch_id:
         books = books.filter(bookcopy__branch_id=branch_id)
     
+    # Calculate totals for the branch or all branches
+    if branch_id:
+        total_copies = BookCopy.objects.filter(branch_id=branch_id).count()
+        available_copies = BookCopy.objects.filter(
+            branch_id=branch_id,
+            condition='good'
+        ).exclude(
+            bookloan__status='borrowed'
+        ).count()
+        borrowed_copies = BookCopy.objects.filter(
+            branch_id=branch_id,
+            bookloan__status='borrowed'
+        ).count()
+    else:
+        total_copies = BookCopy.objects.count()
+        available_copies = BookCopy.objects.filter(
+            condition='good'
+        ).exclude(
+            bookloan__status='borrowed'
+        ).count()
+        borrowed_copies = BookCopy.objects.filter(
+            bookloan__status='borrowed'
+        ).count()
+    
     return {
         'inventory_stats': {
             'total_books': books.count(),
-            'total_copies': BookCopy.objects.filter(
-                branch_id=branch_id if branch_id else None
-            ).count() if branch_id else BookCopy.objects.count(),
-            'available_copies': BookCopy.objects.filter(
-                status='available'
-            ).count(),
-            'borrowed_copies': BookCopy.objects.filter(
-                status='borrowed'
-            ).count(),
+            'total_copies': total_copies,
+            'available_copies': available_copies,
+            'borrowed_copies': borrowed_copies,
         },
         'books': books[:50]
     }

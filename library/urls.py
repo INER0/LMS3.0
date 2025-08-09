@@ -10,6 +10,7 @@ app_name = 'library'
 urlpatterns = [
     path('', views.DashboardView.as_view(), name='dashboard'),
     path('books/', views.BookSearchView.as_view(), name='book_search'),
+    path('books/search/', views.BookSearchView.as_view(), name='book_search_alternate'),
     path('books/<int:pk>/', views.BookDetailView.as_view(), name='book_detail'),
     path('borrowing-rules/', views.BorrowingRulesView.as_view(), name='borrowing_rules'),
     

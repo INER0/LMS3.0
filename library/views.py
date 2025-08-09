@@ -136,7 +136,7 @@ class BookSearchView(TemplateView):
         if query:
             books = books.filter(
                 Q(title__icontains=query) |
-                Q(authors__name__icontains=query) |
+                Q(bookauthor__author__name__icontains=query) |
                 Q(isbn__icontains=query) |
                 Q(publisher__name__icontains=query)
             ).distinct()
@@ -267,7 +267,7 @@ class ManageBooksView(ListView):
             queryset = queryset.filter(
                 Q(title__icontains=search) |
                 Q(isbn__icontains=search) |
-                Q(authors__name__icontains=search)
+                Q(bookauthor__author__name__icontains=search)
             ).distinct()
             
         return queryset

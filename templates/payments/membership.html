@@ -1,0 +1,668 @@
+{% extends 'base.html' %}
+
+{% block title %}Membership Payment - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .membership-card {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .membership-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #4CAF50, #2196F3, #FF9800);
+    }
+    
+    .membership-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .membership-card.current {
+        border-color: #4CAF50;
+        background: rgba(76, 175, 80, 0.1);
+    }
+    
+    .membership-card.current::before {
+        background: #4CAF50;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .feature-list li {
+        padding: 0.25rem 0;
+        color: #e0e0e0;
+    }
+    
+    .feature-list li:before {
+        content: "✓";
+        color: #4CAF50;
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+    
+    .payment-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .payment-method {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method:hover, .payment-method.selected {
+        border-color: #2196F3;
+        background: rgba(33, 150, 243, 0.1);
+    }
+    
+    .price-display {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #4CAF50;
+    }
+    
+    .price-period {
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .membership-comparison {
+        margin-top: 2rem;
+    }
+    
+    .comparison-table {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .comparison-table th {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        padding: 1rem;
+    }
+    
+    .comparison-table td {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #e0e0e0;
+    }
+    
+    .upgrade-badge {
+        background: linear-gradient(45deg, #FF9800, #FF5722);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .current-badge {
+        background: #4CAF50;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .payment-form {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-white mb-1">
+                            <i class="fas fa-credit-card me-2"></i>Membership Payment
+                        </h2>
+                        <p class="text-light mb-0">Choose your membership plan and payment method</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'payments:history' %}" class="btn btn-outline-light btn-sm me-2">
+                            <i class="fas fa-history me-1"></i>Payment History
+                        </a>
+                        <a href="{% url 'library:dashboard' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Membership Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-3">
+                    <i class="fas fa-user-circle me-2"></i>Current Membership Status
+                </h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle bg-success me-3">
+                                {{ user.get_full_name|default:user.username|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h5 class="text-white mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                                {% if user.membership_fee %}
+                                    <span class="current-badge">{{ user.membership_fee.get_membership_type_display }} Member</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No Active Membership</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        {% if user.membership_fee %}
+                            <div class="text-md-end">
+                                <p class="text-light mb-1">
+                                    <i class="fas fa-book me-1"></i>Max Books: <strong>{{ user.membership_fee.max_books }}</strong>
+                                </p>
+                                <p class="text-light mb-1">
+                                    <i class="fas fa-calendar me-1"></i>Loan Period: <strong>{{ user.membership_fee.loan_period }} days</strong>
+                                </p>
+                                <p class="text-light mb-0">
+                                    <i class="fas fa-dollar-sign me-1"></i>Monthly Fee: <strong>MVR {{ user.membership_fee.monthly_fee }}</strong>
+                                </p>
+                            </div>
+                        {% else %}
+                            <div class="text-md-end">
+                                <p class="text-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Please select a membership plan to access library services
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Membership Plans -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h4 class="text-white mb-4">
+                    <i class="fas fa-star me-2"></i>Available Membership Plans
+                </h4>
+                
+                <div class="row">
+                    <!-- Basic Plan -->
+                    <div class="col-md-4 mb-4">
+                        <div class="membership-card h-100 p-4 {% if user.membership_fee.membership_type == 'basic' %}current{% endif %}">
+                            <div class="text-center mb-3">
+                                <h5 class="text-white">
+                                    <i class="fas fa-book text-info me-2"></i>Basic
+                                </h5>
+                                {% if user.membership_fee and user.membership_fee.membership_type == 'basic' %}
+                                    <span class="current-badge">Current Plan</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="text-center mb-4">
+                                <div class="price-display">MVR 50</div>
+                                <div class="price-period">per month</div>
+                                <div class="text-muted">MVR 500 annually</div>
+                            </div>
+                            
+                            <ul class="feature-list mb-4">
+                                <li>Borrow up to 3 books</li>
+                                <li>14-day loan period</li>
+                                <li>Basic access to digital resources</li>
+                                <li>Standard reservation system</li>
+                                <li>Email notifications</li>
+                            </ul>
+                            
+                            <div class="text-center">
+                                {% if user.membership_fee and user.membership_fee.membership_type == 'basic' %}
+                                    <button class="btn btn-outline-success w-100" onclick="renewMembership('basic')">
+                                        <i class="fas fa-sync me-1"></i>Renew Plan
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-info w-100" onclick="selectPlan('basic', 50, 500)">
+                                        {% if user.membership_fee %}
+                                            <i class="fas fa-arrow-down me-1"></i>Downgrade
+                                        {% else %}
+                                            <i class="fas fa-check me-1"></i>Select Plan
+                                        {% endif %}
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Premium Plan -->
+                    <div class="col-md-4 mb-4">
+                        <div class="membership-card h-100 p-4 {% if user.membership_fee.membership_type == 'premium' %}current{% endif %}">
+                            <div class="text-center mb-3">
+                                <h5 class="text-white">
+                                    <i class="fas fa-crown text-warning me-2"></i>Premium
+                                </h5>
+                                {% if user.membership_fee and user.membership_fee.membership_type == 'premium' %}
+                                    <span class="current-badge">Current Plan</span>
+                                {% else %}
+                                    <span class="upgrade-badge">Most Popular</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="text-center mb-4">
+                                <div class="price-display">MVR 75</div>
+                                <div class="price-period">per month</div>
+                                <div class="text-muted">MVR 750 annually</div>
+                            </div>
+                            
+                            <ul class="feature-list mb-4">
+                                <li>Borrow up to 5 books</li>
+                                <li>14-day loan period + 7-day extension</li>
+                                <li>Full access to digital library</li>
+                                <li>Priority reservation system</li>
+                                <li>SMS & email notifications</li>
+                                <li>Research assistance</li>
+                                <li>Extended library hours</li>
+                            </ul>
+                            
+                            <div class="text-center">
+                                {% if user.membership_fee and user.membership_fee.membership_type == 'premium' %}
+                                    <button class="btn btn-outline-success w-100" onclick="renewMembership('premium')">
+                                        <i class="fas fa-sync me-1"></i>Renew Plan
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-warning w-100" onclick="selectPlan('premium', 75, 750)">
+                                        {% if user.membership_fee %}
+                                            <i class="fas fa-arrow-up me-1"></i>Upgrade
+                                        {% else %}
+                                            <i class="fas fa-check me-1"></i>Select Plan
+                                        {% endif %}
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Student Plan -->
+                    <div class="col-md-4 mb-4">
+                        <div class="membership-card h-100 p-4 {% if user.membership_fee.membership_type == 'student' %}current{% endif %}">
+                            <div class="text-center mb-3">
+                                <h5 class="text-white">
+                                    <i class="fas fa-graduation-cap text-success me-2"></i>Student
+                                </h5>
+                                {% if user.membership_fee and user.membership_fee.membership_type == 'student' %}
+                                    <span class="current-badge">Current Plan</span>
+                                {% else %}
+                                    <span class="upgrade-badge">Student Discount</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="text-center mb-4">
+                                <div class="price-display">MVR 30</div>
+                                <div class="price-period">per month</div>
+                                <div class="text-muted">MVR 300 annually</div>
+                            </div>
+                            
+                            <ul class="feature-list mb-4">
+                                <li>Borrow up to 4 books</li>
+                                <li>21-day loan period</li>
+                                <li>Access to study materials</li>
+                                <li>Student reservation priority</li>
+                                <li>Email notifications</li>
+                                <li>Study room access</li>
+                                <li>Academic research support</li>
+                            </ul>
+                            
+                            <div class="text-center">
+                                {% if user.membership_fee and user.membership_fee.membership_type == 'student' %}
+                                    <button class="btn btn-outline-success w-100" onclick="renewMembership('student')">
+                                        <i class="fas fa-sync me-1"></i>Renew Plan
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-success w-100" onclick="selectPlan('student', 30, 300)">
+                                        <i class="fas fa-check me-1"></i>Select Plan
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="row" id="paymentSection" style="display: none;">
+        <div class="col-12">
+            <div class="glass-card payment-form">
+                <h4 class="text-white mb-4">
+                    <i class="fas fa-credit-card me-2"></i>Payment Details
+                </h4>
+                
+                <form id="membershipPaymentForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" id="selectedPlan" name="membership_type" value="">
+                    <input type="hidden" id="selectedAmount" name="amount" value="">
+                    <input type="hidden" id="selectedPeriod" name="period" value="monthly">
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-white mb-3">Selected Plan</h5>
+                            <div id="planSummary" class="p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                                <!-- Plan details will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-white mb-3">Payment Period</h5>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="billing_period" id="monthly" value="monthly" checked>
+                                <label class="btn btn-outline-light" for="monthly">
+                                    <i class="fas fa-calendar me-1"></i>Monthly
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="billing_period" id="annually" value="annually">
+                                <label class="btn btn-outline-light" for="annually">
+                                    <i class="fas fa-calendar-alt me-1"></i>Annual <small>(Save 17%)</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-white mb-3">Payment Method</h5>
+                            <div class="payment-methods">
+                                <div class="payment-method" data-method="cash">
+                                    <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
+                                    <h6 class="text-white">Cash Payment</h6>
+                                    <small class="text-muted">Pay at library counter</small>
+                                </div>
+                                <div class="payment-method" data-method="card">
+                                    <i class="fas fa-credit-card fa-2x text-info mb-2"></i>
+                                    <h6 class="text-white">Credit/Debit Card</h6>
+                                    <small class="text-muted">Secure online payment</small>
+                                </div>
+                                <div class="payment-method" data-method="online">
+                                    <i class="fas fa-university fa-2x text-warning mb-2"></i>
+                                    <h6 class="text-white">Online Banking</h6>
+                                    <small class="text-muted">Direct bank transfer</small>
+                                </div>
+                                <div class="payment-method" data-method="mobile">
+                                    <i class="fas fa-mobile-alt fa-2x text-primary mb-2"></i>
+                                    <h6 class="text-white">Mobile Payment</h6>
+                                    <small class="text-muted">Mobile wallet/apps</small>
+                                </div>
+                            </div>
+                            <input type="hidden" id="paymentMethod" name="payment_method" value="">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label text-white">Special Notes (Optional)</label>
+                                <textarea class="form-control" name="notes" rows="3" placeholder="Any special instructions or notes..."></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 text-center" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                                <h5 class="text-white mb-2">Total Amount</h5>
+                                <div id="totalAmount" class="price-display">MVR 0</div>
+                                <small class="text-muted" id="totalPeriod">per month</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-light" onclick="cancelPayment()">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                                <button type="submit" class="btn btn-success btn-lg" id="submitPayment" disabled>
+                                    <i class="fas fa-lock me-1"></i>Proceed to Payment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div class="modal fade" id="paymentConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>Payment Confirmation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4>Payment Successful!</h4>
+                    <p class="text-muted">Your membership has been activated successfully.</p>
+                    <div id="confirmationDetails" class="mt-4">
+                        <!-- Payment details will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'library:dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedMembershipPlan = null;
+    let selectedPaymentMethod = null;
+    
+    // Membership plan data
+    const membershipPlans = {
+        'basic': {
+            name: 'Basic',
+            monthly: 50,
+            annual: 500,
+            features: ['3 books', '14 days', 'Basic access']
+        },
+        'premium': {
+            name: 'Premium',
+            monthly: 75,
+            annual: 750,
+            features: ['5 books', '14 days + 7 extension', 'Full access', 'Priority reservations']
+        },
+        'student': {
+            name: 'Student',
+            monthly: 30,
+            annual: 300,
+            features: ['4 books', '21 days', 'Study materials', 'Research support']
+        }
+    };
+    
+    function selectPlan(planType, monthlyAmount, annualAmount) {
+        selectedMembershipPlan = planType;
+        
+        // Update form
+        document.getElementById('selectedPlan').value = planType;
+        document.getElementById('selectedAmount').value = monthlyAmount;
+        
+        // Update plan summary
+        updatePlanSummary();
+        
+        // Show payment section
+        document.getElementById('paymentSection').style.display = 'block';
+        document.getElementById('paymentSection').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function renewMembership(planType) {
+        showAlert(`Renewing ${membershipPlans[planType].name} membership...`, 'info');
+        selectPlan(planType, membershipPlans[planType].monthly, membershipPlans[planType].annual);
+    }
+    
+    function updatePlanSummary() {
+        if (!selectedMembershipPlan) return;
+        
+        const plan = membershipPlans[selectedMembershipPlan];
+        const period = document.querySelector('input[name="billing_period"]:checked').value;
+        const amount = period === 'monthly' ? plan.monthly : plan.annual;
+        
+        document.getElementById('planSummary').innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white mb-1">${plan.name} Membership</h6>
+                    <small class="text-muted">${plan.features.join(', ')}</small>
+                </div>
+                <div class="text-end">
+                    <div class="h5 text-success mb-0">MVR ${amount}</div>
+                    <small class="text-muted">per ${period.slice(0, -2)}</small>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('totalAmount').textContent = `MVR ${amount}`;
+        document.getElementById('totalPeriod').textContent = `per ${period.slice(0, -2)}`;
+        document.getElementById('selectedAmount').value = amount;
+        document.getElementById('selectedPeriod').value = period;
+    }
+    
+    function cancelPayment() {
+        document.getElementById('paymentSection').style.display = 'none';
+        selectedMembershipPlan = null;
+        selectedPaymentMethod = null;
+        document.getElementById('submitPayment').disabled = true;
+    }
+    
+    function validatePayment() {
+        const hasMethod = selectedPaymentMethod !== null;
+        const hasPlan = selectedMembershipPlan !== null;
+        document.getElementById('submitPayment').disabled = !(hasMethod && hasPlan);
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Payment method selection
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedPaymentMethod = this.dataset.method;
+                document.getElementById('paymentMethod').value = selectedPaymentMethod;
+                validatePayment();
+            });
+        });
+        
+        // Billing period change
+        document.querySelectorAll('input[name="billing_period"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (selectedMembershipPlan) {
+                    updatePlanSummary();
+                }
+            });
+        });
+        
+        // Form submission
+        document.getElementById('membershipPaymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedPaymentMethod || !selectedMembershipPlan) {
+                showAlert('Please select a membership plan and payment method.', 'warning');
+                return;
+            }
+            
+            // Show loading
+            const submitBtn = document.getElementById('submitPayment');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+            submitBtn.disabled = true;
+            
+            // Simulate payment processing
+            setTimeout(() => {
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+                // Show success modal
+                showPaymentSuccess();
+            }, 2000);
+        });
+    });
+    
+    function showPaymentSuccess() {
+        const plan = membershipPlans[selectedMembershipPlan];
+        const period = document.querySelector('input[name="billing_period"]:checked').value;
+        const amount = period === 'monthly' ? plan.monthly : plan.annual;
+        
+        document.getElementById('confirmationDetails').innerHTML = `
+            <div class="alert alert-success">
+                <h6>Payment Details:</h6>
+                <p class="mb-1"><strong>Plan:</strong> ${plan.name} Membership</p>
+                <p class="mb-1"><strong>Amount:</strong> MVR ${amount}</p>
+                <p class="mb-1"><strong>Period:</strong> ${period}</p>
+                <p class="mb-0"><strong>Payment Method:</strong> ${selectedPaymentMethod}</p>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('paymentConfirmModal'));
+        modal.show();
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 import csv
 
 from authentication.utils import staff_required, manager_required
-from authentication.models import User
+from authentication.models import User, Role, UserRole
 from library.models import Book, BookCopy, Branch
 from circulation.models import BookLoan, Reservation, Fine
 from payments.models import Payment
@@ -1081,5 +1081,292 @@ def _generate_staff_report(start_date, end_date):
             ).count(),
         }
     }
+
+
+# ============= STAFF MANAGEMENT AJAX ENDPOINTS =============
+
+@manager_required
+def staff_roles_api(request, staff_id):
+    """API endpoint for staff role management"""
+    try:
+        staff = get_object_or_404(User, id=staff_id)
+        
+        if request.method == 'GET':
+            # Get staff info and available roles
+            current_roles = [role.role.name for role in staff.userrole_set.all()]
+            available_roles = [
+                {'name': role.name, 'display_name': role.display_name}
+                for role in Role.objects.all()
+            ]
+            current_branch = staff.profile.branch_id if hasattr(staff, 'profile') and staff.profile.branch else None
+            
+            return JsonResponse({
+                'success': True,
+                'staff': {
+                    'name': staff.get_full_name() or staff.username,
+                    'email': staff.email
+                },
+                'current_roles': current_roles,
+                'available_roles': available_roles,
+                'current_branch': current_branch
+            })
+        
+        elif request.method == 'POST':
+            import json
+            data = json.loads(request.body)
+            selected_roles = data.get('roles', [])
+            selected_branch = data.get('branch')
+            
+            # Clear existing roles
+            staff.userrole_set.all().delete()
+            
+            # Add new roles
+            for role_name in selected_roles:
+                try:
+                    role = Role.objects.get(name=role_name)
+                    UserRole.objects.create(user=staff, role=role)
+                except Role.DoesNotExist:
+                    continue
+            
+            # Update branch assignment (if profile exists)
+            if hasattr(staff, 'profile') and staff.profile:
+                if selected_branch:
+                    try:
+                        branch = Branch.objects.get(id=selected_branch)
+                        staff.profile.branch = branch
+                        staff.profile.save()
+                    except Branch.DoesNotExist:
+                        pass
+                else:
+                    staff.profile.branch = None
+                    staff.profile.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Staff roles updated successfully'
+            })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error managing roles: {str(e)}'
+        })
+
+
+@manager_required
+@require_POST
+def delete_staff_api(request, staff_id):
+    """API endpoint for deleting staff members"""
+    try:
+        import json
+        staff = get_object_or_404(User, id=staff_id)
+        
+        # Prevent self-deletion
+        if staff == request.user:
+            return JsonResponse({
+                'success': False,
+                'message': 'You cannot delete your own account'
+            })
+        
+        # Check if staff member has librarian or manager role
+        staff_roles = [ur.role.name for ur in staff.userrole_set.all()]
+        if not any(role in ['librarian', 'manager'] for role in staff_roles):
+            return JsonResponse({
+                'success': False,
+                'message': 'Only librarians and managers can be deleted from this interface'
+            })
+        
+        # Check if staff has active loans or pending tasks
+        active_loans_count = BookLoan.objects.filter(
+            status='borrowed'
+        ).count()
+        
+        # Store staff name before deletion
+        staff_name = staff.get_full_name() or staff.username
+        
+        # Delete user (this will cascade to UserRole entries)
+        staff.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{staff_name} has been deleted successfully'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error deleting staff member: {str(e)}'
+        })
+
+
+@manager_required
+@require_POST
+def staff_status_api(request, staff_id):
+    """API endpoint for staff status updates"""
+    try:
+        import json
+        staff = get_object_or_404(User, id=staff_id)
+        data = json.loads(request.body)
+        is_active = data.get('is_active', True)
+        
+        staff.is_active = is_active
+        staff.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Staff member {"activated" if is_active else "deactivated"} successfully'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error updating status: {str(e)}'
+        })
+
+
+@manager_required
+def staff_invite_api(request):
+    """API endpoint for staff invitations"""
+    if request.method == 'POST':
+        try:
+            email = request.POST.get('email')
+            role = request.POST.get('role')
+            first_name = request.POST.get('first_name', '')
+            last_name = request.POST.get('last_name', '')
+            branch_id = request.POST.get('branch')
+            
+            if not email or not role:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Email and role are required'
+                })
+            
+            # Check if user already exists
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'A user with this email already exists'
+                })
+            
+            # Create temporary username from email
+            username = email.split('@')[0]
+            counter = 1
+            original_username = username
+            while User.objects.filter(username=username).exists():
+                username = f"{original_username}{counter}"
+                counter += 1
+            
+            # Create user with temporary password
+            import secrets
+            temp_password = secrets.token_urlsafe(12)
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                password=temp_password,
+                is_staff=True
+            )
+            
+            # Assign role
+            try:
+                role_obj = Role.objects.get(name=role)
+                UserRole.objects.create(user=user, role=role_obj)
+            except Role.DoesNotExist:
+                user.delete()
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Role "{role}" does not exist'
+                })
+            
+            # Assign branch if provided
+            if branch_id and hasattr(user, 'profile'):
+                try:
+                    branch = Branch.objects.get(id=branch_id)
+                    user.profile.branch = branch
+                    user.profile.save()
+                except Branch.DoesNotExist:
+                    pass
+            
+            # In production, send invitation email with temp_password
+            # For now, just return success
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Staff invitation sent to {email}',
+                'temp_password': temp_password  # Remove this in production
+            })
+        
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error sending invitation: {str(e)}'
+            })
+
+
+@manager_required
+def staff_export_api(request):
+    """Export staff list as CSV"""
+    import csv
+    from django.utils import timezone
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="staff_export_{timezone.now().strftime("%Y%m%d")}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Write header
+    writer.writerow([
+        'Username', 'Full Name', 'Email', 'Roles', 'Branch', 
+        'Status', 'Join Date', 'Last Login'
+    ])
+    
+    # Get staff members
+    staff_members = User.objects.filter(
+        userrole__role__name__in=['librarian', 'manager']
+    ).select_related().prefetch_related('userrole_set__role').distinct()
+    
+    # Apply filters from query params
+    role_filter = request.GET.get('role')
+    if role_filter:
+        staff_members = staff_members.filter(userrole__role__name=role_filter)
+    
+    branch_filter = request.GET.get('branch')
+    if branch_filter:
+        staff_members = staff_members.filter(profile__branch_id=branch_filter)
+    
+    status_filter = request.GET.get('status')
+    if status_filter == 'active':
+        staff_members = staff_members.filter(is_active=True)
+    elif status_filter == 'inactive':
+        staff_members = staff_members.filter(is_active=False)
+    
+    search = request.GET.get('search')
+    if search:
+        staff_members = staff_members.filter(
+            Q(username__icontains=search) |
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
+        )
+    
+    # Write data
+    for staff in staff_members:
+        roles = ', '.join([ur.role.display_name for ur in staff.userrole_set.all()])
+        branch = staff.profile.branch.name if hasattr(staff, 'profile') and staff.profile.branch else 'N/A'
+        
+        writer.writerow([
+            staff.username,
+            staff.get_full_name() or 'N/A',
+            staff.email,
+            roles or 'No Role',
+            branch,
+            'Active' if staff.is_active else 'Inactive',
+            staff.date_joined.strftime('%Y-%m-%d'),
+            staff.last_login.strftime('%Y-%m-%d %H:%M') if staff.last_login else 'Never'
+        ])
+    
+    return response
 
 

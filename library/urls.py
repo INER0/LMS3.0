@@ -98,4 +98,20 @@ urlpatterns = [
          name='edit_librarian'),
     path('manager/librarians/<int:user_id>/deactivate/',
          staff_views.deactivate_librarian, name='deactivate_librarian'),
+    
+    # Staff Management AJAX APIs
+    path('staff/<int:staff_id>/roles/', staff_views.staff_roles_api,
+         name='staff_roles_api'),
+    path('staff/<int:staff_id>/status/', staff_views.staff_status_api,
+         name='staff_status_api'),
+    path('staff/<int:staff_id>/delete/', staff_views.delete_staff_api,
+         name='delete_staff_api'),
+    path('staff/invite/', staff_views.staff_invite_api,
+         name='staff_invite_api'),
+    path('staff/export/', staff_views.staff_export_api,
+         name='staff_export_api'),
+    path('staff/<int:staff_id>/edit/', views.redirect_to_edit_staff,
+         name='edit_staff'),
+    path('staff/<int:staff_id>/profile/', views.redirect_to_profile,
+         name='view_staff_profile'),
 ]

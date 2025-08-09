@@ -585,3 +585,18 @@ class BranchDetailView(DetailView):
         ).order_by('-borrow_date')[:5]
         
         return context
+
+
+# Staff Management Redirects
+@login_required
+def redirect_to_edit_staff(request, staff_id):
+    """Redirect to staff edit page"""
+    return redirect('library:edit_librarian', user_id=staff_id)
+
+
+@login_required  
+def redirect_to_profile(request, staff_id):
+    """Redirect to staff profile page or show basic info"""
+    staff = get_object_or_404(User, id=staff_id)
+    # For now, redirect to edit page since we don't have a profile view
+    return redirect('library:edit_librarian', user_id=staff_id)

@@ -90,7 +90,9 @@ class User(AbstractUser):
             return False
 
     def save(self, *args, **kwargs):
-        """Override save method"""
+        """Override save to handle empty national_id as NULL"""
+        if self.national_id == '':
+            self.national_id = None
         super().save(*args, **kwargs)
     
     def is_account_locked(self):

@@ -1,8 +1,24 @@
-asgiref==3.9.1
+# Django Library Management System Requirements
+# Core Django framework and essential packages
+
+# Django Framework
 Django==5.2.5
-django-debug-toolbar==6.0.0
-django-extensions==4.1
-djangorestframework==3.16.1
-pillow==11.3.0
-python-decouple==3.8
+asgiref==3.9.1
 sqlparse==0.5.3
+
+# Django Extensions and Tools
+django-extensions==4.1
+django-debug-toolbar==6.0.0
+djangorestframework==3.16.1
+
+# Configuration Management
+python-decouple==3.8
+
+# Image Processing
+Pillow==11.3.0
+
+# Additional packages that might be needed
+# Uncomment if you encounter import errors:
+# django-cors-headers==4.0.0
+# requests==2.31.0
+# pytz==2023.3

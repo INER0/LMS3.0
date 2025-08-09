@@ -18,8 +18,10 @@ class LoginView(View):
     template_name = 'authentication/login.html'
     
     def get(self, request):
-        # If user is already authenticated, redirect to dashboard
+        # If user is already authenticated, redirect based on role
         if request.user.is_authenticated:
+            if request.user.is_super_admin():
+                return redirect('/admin/')
             return redirect('library:dashboard')
         return render(request, self.template_name)
     
@@ -54,7 +56,11 @@ class LoginView(View):
             
             messages.success(request, f'Welcome back, {user.first_name or user.username}!')
             
-            # Redirect to next page or dashboard
+            # Check if user is super admin and redirect to Django admin
+            if user.is_super_admin():
+                return redirect('/admin/')
+            
+            # Redirect to next page or dashboard for regular users
             next_url = request.GET.get('next', 'library:dashboard')
             return redirect(next_url)
         else:

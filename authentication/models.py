@@ -81,10 +81,16 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} ({self.email})"
     
+    def is_super_admin(self):
+        """Check if user has Admin role (super admin)"""
+        try:
+            admin_role = Role.objects.get(name='Admin')
+            return UserRole.objects.filter(user=self, role=admin_role).exists()
+        except Role.DoesNotExist:
+            return False
+
     def save(self, *args, **kwargs):
-        """Override save to handle empty national_id as NULL"""
-        if self.national_id == '':
-            self.national_id = None
+        """Override save method"""
         super().save(*args, **kwargs)
     
     def is_account_locked(self):
